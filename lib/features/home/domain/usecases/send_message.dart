@@ -3,6 +3,7 @@ library;
 
 import 'package:fpdart/fpdart.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/ai_response.dart';
 import '../entities/brainstorm_category.dart';
@@ -15,6 +16,18 @@ class SendMessageUseCase {
   const SendMessageUseCase(this.repository);
 
   Future<Either<Failure, AIResponse>> call(SendMessageParams params) {
+    // Count exchanges (pairs of user + assistant messages)
+    final exchangeCount = params.messages.length ~/ 2;
+    if (exchangeCount >= AppConstants.maxExchangesBeforeWrap) {
+      return Future.value(
+        const Left(
+          ValidationFailure(
+            'Maximum conversation length reached. Please wrap up or start a new session.',
+          ),
+        ),
+      );
+    }
+
     return repository.sendMessage(
       params.messages,
       requestFinalOutput: params.requestFinalOutput,
