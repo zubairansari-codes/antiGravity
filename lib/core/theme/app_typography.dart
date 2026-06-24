@@ -1,9 +1,7 @@
-/// Typography configuration using system fonts.
-///
-/// Uses system fonts for reliability (no runtime font fetching).
-/// Falls back to the Material default font stack.
-library;
-
+// Typography configuration using system fonts.
+//
+// Uses system fonts for reliability (no runtime font fetching).
+// Falls back to the Material default font stack.
 import 'package:flutter/material.dart';
 
 abstract final class AppTypography {
@@ -86,6 +84,16 @@ abstract final class AppTypography {
           letterSpacing: 0.5,
         ),
       );
+
+  /// Returns a text theme scaled by the current [MediaQuery.textScaler].
+  ///
+  /// Flutter [Text] widgets automatically scale by default; this helper is
+  /// useful when you need to pass an explicitly scaled [TextTheme] to a
+  /// widget that does not read [MediaQuery] (e.g. custom painters).
+  static TextTheme responsiveTextTheme(BuildContext context) {
+    final scale = MediaQuery.textScalerOf(context).scale(1.0);
+    return textTheme.apply(fontSizeFactor: scale);
+  }
 
   /// Monospace style for prompts.
   static const TextStyle mono = TextStyle(

@@ -1,6 +1,4 @@
-/// Material 3 theme configuration for AntiGravity.
-library;
-
+// Material 3 theme configuration for AntiGravity.
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
@@ -39,8 +37,9 @@ abstract final class AppTheme {
         elevation: 0,
         color: AppColors.cardBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          // TODO: Replace with `withValues(alpha: 0.5)` when Flutter 3.27+ is adopted.
           side: BorderSide(color: AppColors.surfaceVariant.withOpacity(0.5)),
+          borderRadius: BorderRadius.circular(16),
         ),
         margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
       ),
@@ -58,6 +57,7 @@ abstract final class AppTheme {
       // ── Input ────────────────────────────────────────────
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
+        // TODO: Replace with `withValues(alpha: 0.4)` when Flutter 3.27+ is adopted.
         fillColor: AppColors.surfaceVariant.withOpacity(0.4),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -84,6 +84,7 @@ abstract final class AppTheme {
 
       // ── Divider ──────────────────────────────────────────
       dividerTheme: DividerThemeData(
+        // TODO: Replace with `withValues(alpha: 0.5)` when Flutter 3.27+ is adopted.
         color: AppColors.surfaceVariant.withOpacity(0.5),
         thickness: 1,
       ),
@@ -91,6 +92,106 @@ abstract final class AppTheme {
       // ── Icon ─────────────────────────────────────────────
       iconTheme: const IconThemeData(
         color: AppColors.onSurfaceVariant,
+        size: 24,
+      ),
+
+      // ── Transitions ──────────────────────────────────────
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
+    );
+  }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: const ColorScheme.dark(
+        primary: AppColors.primary,
+        onPrimary: AppColors.onPrimary,
+        primaryContainer: AppColors.primaryDark,
+        secondary: AppColors.accent,
+        surface: AppColors.darkSurface,
+        onSurface: AppColors.darkOnSurface,
+        onSurfaceVariant: AppColors.darkOnSurfaceVariant,
+        error: AppColors.error,
+      ),
+      scaffoldBackgroundColor: AppColors.darkBackground,
+      textTheme: AppTypography.textTheme,
+
+      // ── AppBar ───────────────────────────────────────────
+      appBarTheme: AppBarTheme(
+        elevation: 0,
+        scrolledUnderElevation: 0.5,
+        centerTitle: true,
+        backgroundColor: AppColors.darkBackground,
+        foregroundColor: AppColors.darkOnSurface,
+        titleTextStyle: AppTypography.textTheme.titleLarge,
+      ),
+
+      // ── Cards ────────────────────────────────────────────
+      cardTheme: CardTheme(
+        elevation: 0,
+        color: AppColors.darkCardBackground,
+        shape: RoundedRectangleBorder(
+          // TODO: Replace with `withValues(alpha: 0.5)` when Flutter 3.27+ is adopted.
+          side: BorderSide(color: AppColors.darkSurfaceVariant.withOpacity(0.5)),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+      ),
+
+      // ── FAB ──────────────────────────────────────────────
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.onPrimary,
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+
+      // ── Input ────────────────────────────────────────────
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        // TODO: Replace with `withValues(alpha: 0.4)` when Flutter 3.27+ is adopted.
+        fillColor: AppColors.darkSurfaceVariant.withOpacity(0.4),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+      ),
+
+      // ── Snackbar ─────────────────────────────────────────
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        backgroundColor: AppColors.darkOnSurface,
+      ),
+
+      // ── Divider ──────────────────────────────────────────
+      dividerTheme: DividerThemeData(
+        // TODO: Replace with `withValues(alpha: 0.5)` when Flutter 3.27+ is adopted.
+        color: AppColors.darkSurfaceVariant.withOpacity(0.5),
+        thickness: 1,
+      ),
+
+      // ── Icon ─────────────────────────────────────────────
+      iconTheme: const IconThemeData(
+        color: AppColors.darkOnSurfaceVariant,
         size: 24,
       ),
 

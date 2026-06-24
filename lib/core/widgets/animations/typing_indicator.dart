@@ -1,6 +1,4 @@
-/// Typing indicator — three bouncing dots for AI "thinking" state.
-library;
-
+// Typing indicator — three bouncing dots for AI "thinking" state.
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';

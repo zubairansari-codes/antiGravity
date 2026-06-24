@@ -1,6 +1,4 @@
-/// Error view — displays a failure with retry option.
-library;
-
+// Error view — displays a failure with retry option.
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';

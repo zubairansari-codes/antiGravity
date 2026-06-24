@@ -1,9 +1,7 @@
-/// App-wide constants — API config, timeouts, free-tier limits.
-///
-/// API keys are loaded from `.env` at runtime via flutter_dotenv.
-/// Nothing secret lives here.
-library;
-
+// App-wide constants — API config, timeouts, free-tier limits.
+//
+// API keys are injected at build time via --dart-define.
+// Nothing secret lives here.
 abstract final class AppConstants {
   /// Groq API base URL (OpenAI-compatible).
   static const String apiBaseUrl = 'https://api.groq.com/openai/v1';
@@ -18,8 +16,10 @@ abstract final class AppConstants {
   /// Conversation limits — auto-wrap after this many exchanges.
   static const int maxExchangesBeforeWrap = 10;
 
-  /// Groq model selection — Llama 3.3 70B for quality, 8B for speed.
-  static const String conversationModel = 'llama-3.3-70b-versatile';
+  /// Groq model selection — dual-model routing.
+  /// Fast/cheap model for conversation turns.
+  static const String conversationModel = 'llama-3.1-8b-instant';
+  /// High-quality model for final output generation.
   static const String finalOutputModel = 'llama-3.3-70b-versatile';
 
   /// ElevenLabs TTS config.

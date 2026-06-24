@@ -1,10 +1,8 @@
-/// Voice wave animation — visual feedback during listening/speaking.
-///
-/// Shows 5 animated bars that pulse in a staggered wave pattern.
-/// Active colour changes based on whether the app is listening
-/// (primary purple) or speaking (amber accent).
-library;
-
+// Voice wave animation — visual feedback during listening/speaking.
+//
+// Shows 5 animated bars that pulse in a staggered wave pattern.
+// Active colour changes based on whether the app is listening
+// (primary purple) or speaking (amber accent).
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
