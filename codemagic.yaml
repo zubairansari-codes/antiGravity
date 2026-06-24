@@ -27,6 +27,52 @@ workflows:
     environment:
       groups:
         - app_secrets
+        - ios_credentials  # Apple ID, App-specific password, Team ID
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        BUNDLE_ID: "com.antigravity.antigravity"
+    integrations:
+      app_store_connect: Codemagic  # Name of your App Store Connect API key in Codemagic
+    scripts:
+      - name: Generate .env file
+        script: |
+          echo "GROQ_API_KEY=$GROQ_API_KEY" > .env
+          echo "ELEVENLABS_API_KEY=$ELEVENLABS_API_KEY" >> .env
+      - name: Get Flutter packages
+        script: flutter pub get
+      - name: Install CocoaPods
+        script: |
+          cd ios
+          pod install
+      - name: Set up code signing
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_DEVELOPMENT \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Build iOS
+        script: flutter build ipa --release --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      email:
+        recipients:
+          - zubairansari.codes@gmail.com  # Change to your email
+        notify:
+          success: true
+          failure: true
+
+  ios-simulator-build:
+    name: iOS Simulator Build (No Signing Required)
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    environment:
+      groups:
+        - app_secrets
       flutter: stable
       xcode: latest
       cocoapods: default
@@ -41,8 +87,7 @@ workflows:
         script: |
           cd ios
           pod install
-      - name: Build iOS (no codesign)
-        script: flutter build ios --release --no-codesign
+      - name: Build iOS Simulator
+        script: flutter build ios --debug --simulator
     artifacts:
-      - build/ios/ipa/*.ipa
-      - build/**/outputs/**/mapping.txt
+      - build/ios/**/*.app
