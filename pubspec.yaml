@@ -1,0 +1,50 @@
+name: antigravity
+description: "Voice-powered brainstorming app that breaks convention."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.3 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.5.1
+
+  # Navigation
+  go_router: ^13.2.0
+
+  # Networking
+  dio: ^5.4.0
+
+  # Functional Programming (Either, Option)
+  fpdart: ^1.1.0
+
+  # Local Storage
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # Voice
+  speech_to_text: ^6.6.0
+  just_audio: ^0.9.36
+
+  # Utils
+  uuid: ^4.3.0
+  flutter_dotenv: ^5.1.0
+  connectivity_plus: ^5.0.0
+  share_plus: ^7.2.0
+
+  # UI
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - .env
