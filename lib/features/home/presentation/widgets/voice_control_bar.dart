@@ -1,7 +1,8 @@
-/// Voice control bar — bottom bar with mic button and text input fallback.
+/// Voice control bar — bottom bar with mic button, text input fallback, and haptics.
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../core/theme/app_colors.dart';
 
@@ -55,44 +56,55 @@ class _VoiceControlBarState extends State<VoiceControlBar> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Keyboard toggle
-        IconButton(
-          onPressed: () => setState(() => _showTextField = true),
-          icon: const Icon(Icons.keyboard_outlined),
-          color: AppColors.onSurfaceVariant,
-          tooltip: 'Type instead',
+        Semantics(
+          label: 'Switch to keyboard input',
+          button: true,
+          child: IconButton(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              setState(() => _showTextField = true);
+            },
+            icon: const Icon(Icons.keyboard_outlined),
+            color: AppColors.onSurfaceVariant,
+            tooltip: 'Type instead',
+          ),
         ),
 
         const SizedBox(width: 16),
 
         // Mic button — hero element
-        GestureDetector(
-          onTap: widget.onMicTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: widget.isListening ? 72 : 64,
-            height: widget.isListening ? 72 : 64,
-            decoration: BoxDecoration(
-              gradient: widget.isListening
-                  ? const LinearGradient(
-                      colors: [AppColors.error, Color(0xFFE55039)],
-                    )
-                  : AppColors.primaryGradient,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: (widget.isListening
-                          ? AppColors.error
-                          : AppColors.primary)
-                      .withOpacity(0.4),
-                  blurRadius: widget.isListening ? 20 : 12,
-                  spreadRadius: widget.isListening ? 2 : 0,
-                ),
-              ],
-            ),
-            child: Icon(
-              widget.isListening ? Icons.stop_rounded : Icons.mic_rounded,
-              color: Colors.white,
-              size: 30,
+        Semantics(
+          label: widget.isListening ? 'Tap to stop listening' : 'Tap to speak',
+          button: true,
+          child: GestureDetector(
+            onTap: widget.onMicTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: widget.isListening ? 72 : 64,
+              height: widget.isListening ? 72 : 64,
+              decoration: BoxDecoration(
+                gradient: widget.isListening
+                    ? const LinearGradient(
+                        colors: [AppColors.error, Color(0xFFE55039)],
+                      )
+                    : AppColors.primaryGradient,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: (widget.isListening
+                            ? AppColors.error
+                            : AppColors.primary)
+                        .withOpacity(0.4),
+                    blurRadius: widget.isListening ? 20 : 12,
+                    spreadRadius: widget.isListening ? 2 : 0,
+                  ),
+                ],
+              ),
+              child: Icon(
+                widget.isListening ? Icons.stop_rounded : Icons.mic_rounded,
+                color: Colors.white,
+                size: 30,
+              ),
             ),
           ),
         ),
@@ -109,11 +121,18 @@ class _VoiceControlBarState extends State<VoiceControlBar> {
     return Row(
       children: [
         // Back to voice mode
-        IconButton(
-          onPressed: () => setState(() => _showTextField = false),
-          icon: const Icon(Icons.mic_outlined),
-          color: AppColors.primary,
-          tooltip: 'Voice input',
+        Semantics(
+          label: 'Switch to voice input',
+          button: true,
+          child: IconButton(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              setState(() => _showTextField = false);
+            },
+            icon: const Icon(Icons.mic_outlined),
+            color: AppColors.primary,
+            tooltip: 'Voice input',
+          ),
         ),
 
         const SizedBox(width: 8),
@@ -140,10 +159,14 @@ class _VoiceControlBarState extends State<VoiceControlBar> {
         const SizedBox(width: 8),
 
         // Send button
-        IconButton(
-          onPressed: () => _submitText(_textController.text),
-          icon: const Icon(Icons.send_rounded),
-          color: AppColors.primary,
+        Semantics(
+          label: 'Send message',
+          button: true,
+          child: IconButton(
+            onPressed: () => _submitText(_textController.text),
+            icon: const Icon(Icons.send_rounded),
+            color: AppColors.primary,
+          ),
         ),
       ],
     );
@@ -151,6 +174,7 @@ class _VoiceControlBarState extends State<VoiceControlBar> {
 
   void _submitText(String text) {
     if (text.trim().isEmpty) return;
+    HapticFeedback.lightImpact();
     widget.onTextSubmit?.call(text.trim());
     _textController.clear();
   }
