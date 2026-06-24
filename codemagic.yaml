@@ -6,7 +6,7 @@ workflows:
     environment:
       groups:
         - app_secrets
-      flutter: stable
+      flutter: 3.19.5
       java: 17
     scripts:
       - name: Generate .env file
@@ -28,7 +28,7 @@ workflows:
       groups:
         - app_secrets
         - ios_credentials  # Apple ID, App-specific password, Team ID
-      flutter: stable
+      flutter: 3.19.5
       xcode: latest
       cocoapods: default
       vars:
@@ -73,7 +73,7 @@ workflows:
     environment:
       groups:
         - app_secrets
-      flutter: stable
+      flutter: 3.19.5
       xcode: latest
       cocoapods: default
     scripts:
