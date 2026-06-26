@@ -6,6 +6,7 @@ library;
 
 import '../../domain/entities/artefact_type.dart';
 import '../../domain/entities/brainstorm_category.dart';
+import '../../domain/entities/conversation_artefact.dart';
 import '../../domain/entities/conversation_mode.dart';
 import '../models/ai_response_model.dart';
 import '../models/message_model.dart';
@@ -21,5 +22,7 @@ abstract class IBrainstormRemoteDataSource {
     required BrainstormCategory category,
     ConversationMode mode = ConversationMode.riff,
     ArtefactType? requestedArtefact,
+    List<ConversationArtefact> previousArtefacts = const [],
+    String? contextSummary,
   });
 }

@@ -16,6 +16,7 @@ import '../../domain/entities/artefact_type.dart';
 import '../../domain/entities/brainstorm.dart';
 import '../../domain/entities/brainstorm_category.dart';
 import '../../domain/entities/chat_message.dart';
+import '../../domain/entities/conversation_artefact.dart';
 import '../../domain/entities/conversation_mode.dart';
 import '../../domain/repositories/brainstorm_repository.dart';
 import '../datasources/brainstorm_local_ds_interface.dart';
@@ -38,6 +39,8 @@ class BrainstormRepositoryImpl implements BrainstormRepository {
     required BrainstormCategory category,
     ConversationMode mode = ConversationMode.riff,
     ArtefactType? requestedArtefact,
+    List<ConversationArtefact> previousArtefacts = const [],
+    String? contextSummary,
   }) async {
     try {
       final messageModels = messages.map(MessageModel.fromEntity).toList();
@@ -47,6 +50,8 @@ class BrainstormRepositoryImpl implements BrainstormRepository {
         category: category,
         mode: mode,
         requestedArtefact: requestedArtefact,
+        previousArtefacts: previousArtefacts,
+        contextSummary: contextSummary,
       );
       return Right(response.toEntity());
     } on ValidationException catch (e) {
@@ -96,6 +101,8 @@ class BrainstormRepositoryImpl implements BrainstormRepository {
           category: category,
           mode: mode,
           requestedArtefact: requestedArtefact,
+          previousArtefacts: previousArtefacts,
+          contextSummary: contextSummary,
         );
         return Right(correctiveResponse.toEntity());
       } catch (e) {
@@ -124,6 +131,8 @@ class BrainstormRepositoryImpl implements BrainstormRepository {
     required BrainstormCategory category,
     ConversationMode mode = ConversationMode.riff,
     ArtefactType? requestedArtefact,
+    List<ConversationArtefact> previousArtefacts = const [],
+    String? contextSummary,
   }) async {
     const maxRetries = 3;
     const baseDelay = Duration(seconds: 1);
@@ -136,6 +145,8 @@ class BrainstormRepositoryImpl implements BrainstormRepository {
           category: category,
           mode: mode,
           requestedArtefact: requestedArtefact,
+          previousArtefacts: previousArtefacts,
+          contextSummary: contextSummary,
         );
       } on DioException catch (e) {
         final statusCode = e.response?.statusCode;

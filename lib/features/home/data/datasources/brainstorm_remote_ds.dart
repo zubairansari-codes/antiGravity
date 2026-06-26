@@ -11,6 +11,7 @@ import 'package:dio/dio.dart';
 
 import '../../domain/entities/artefact_type.dart';
 import '../../domain/entities/brainstorm_category.dart';
+import '../../domain/entities/conversation_artefact.dart';
 import '../../domain/entities/conversation_mode.dart';
 import '../models/ai_response_model.dart';
 import '../models/message_model.dart';
@@ -84,6 +85,8 @@ class BrainstormRemoteDataSource implements IBrainstormRemoteDataSource {
     required BrainstormCategory category,
     ConversationMode mode = ConversationMode.riff,
     ArtefactType? requestedArtefact,
+    List<ConversationArtefact> previousArtefacts = const [],
+    String? contextSummary,
   }) async {
     // Validate the most recent user message
     final lastUserMessage = messages.lastWhere(
@@ -130,6 +133,8 @@ class BrainstormRemoteDataSource implements IBrainstormRemoteDataSource {
           isFinal: requestFinal,
           mode: mode,
           requestedArtefact: requestedArtefact,
+          contextSummary: contextSummary,
+          previousArtefacts: previousArtefacts,
         ),
       },
       ...sanitizedMessages.map((m) => m.toJson()),

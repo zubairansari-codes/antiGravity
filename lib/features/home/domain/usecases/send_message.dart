@@ -9,6 +9,7 @@ import '../entities/ai_response.dart';
 import '../entities/artefact_type.dart';
 import '../entities/brainstorm_category.dart';
 import '../entities/chat_message.dart';
+import '../entities/conversation_artefact.dart';
 import '../entities/conversation_mode.dart';
 import '../repositories/brainstorm_repository.dart';
 
@@ -36,6 +37,8 @@ class SendMessageUseCase {
       category: params.category,
       mode: params.mode,
       requestedArtefact: params.requestedArtefact,
+      previousArtefacts: params.previousArtefacts,
+      contextSummary: params.contextSummary,
     );
   }
 }
@@ -48,10 +51,18 @@ class SendMessageParams {
     required this.category,
     this.mode = ConversationMode.riff,
     this.requestedArtefact,
+    this.previousArtefacts = const [],
+    this.contextSummary,
   });
   final List<ChatMessage> messages;
   final bool requestFinalOutput;
   final BrainstormCategory category;
   final ConversationMode mode;
   final ArtefactType? requestedArtefact;
+
+  /// Artefacts created earlier in this session — sent as prompt context.
+  final List<ConversationArtefact> previousArtefacts;
+
+  /// Optional short summary of the conversation so far.
+  final String? contextSummary;
 }
