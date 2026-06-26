@@ -114,15 +114,21 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
   /// Timer for clearing live transcript after final result.
   Timer? _transcriptClearTimer;
 
+  /// Whether this notifier has already been disposed.
+  bool _disposed = false;
+
   @override
   BrainstormSessionState build() {
     // Register cleanup callbacks for Riverpod 2.x disposal.
-    ref.onDispose(dispose);
+    ref.onDispose(_dispose);
     return const BrainstormSessionState();
   }
 
   /// Dispose resources — stops speech service and cancels any pending timers.
-  void dispose() {
+  void _dispose() {
+    if (_disposed) return;
+    _disposed = true;
+
     debugPrint('[AG] BrainstormSessionVm.dispose() called');
     _continuousMode = false;
     _restartTimer?.cancel();
@@ -446,6 +452,8 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
         } catch (e) {
           debugPrint('[AG] TTS error: $e');
         }
+
+        if (_disposed) return;
 
         state = state.copyWith(isSpeaking: false);
 
