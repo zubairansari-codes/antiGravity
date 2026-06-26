@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/voice_personas.dart';
 import '../../../onboarding/onboarding_preferences.dart';
 import '../../domain/entities/brainstorm.dart';
 import '../../domain/entities/brainstorm_category.dart';
@@ -171,3 +173,62 @@ final filteredBrainstormsProvider = Provider<AsyncValue<List<Brainstorm>>>((ref)
     error: (err, stack) => AsyncValue.error(err, stack),
   );
 });
+
+// ── Voice silence timeout ─────────────────────────────────────────
+
+final silenceTimeoutProvider = StateNotifierProvider<SilenceTimeoutNotifier, int>(
+  (ref) => SilenceTimeoutNotifier(),
+);
+
+class SilenceTimeoutNotifier extends StateNotifier<int> {
+
+  SilenceTimeoutNotifier() : super(2000) {
+    _load();
+  }
+  static const String _boxName = 'settings_silence';
+  static const String _key = 'silenceTimeoutMs';
+
+  Future<void> _load() async {
+    final box = await Hive.openBox<int>(_boxName);
+    final value = box.get(_key);
+    if (value != null) {
+      state = value;
+    }
+  }
+
+  Future<void> setTimeout(int milliseconds) async {
+    state = milliseconds;
+    final box = await Hive.openBox<int>(_boxName);
+    await box.put(_key, milliseconds);
+  }
+}
+
+// ── Voice persona ─────────────────────────────────────────────────
+
+final voicePersonaProvider = StateNotifierProvider<VoicePersonaNotifier, VoicePersona>(
+  (ref) => VoicePersonaNotifier(),
+);
+
+class VoicePersonaNotifier extends StateNotifier<VoicePersona> {
+
+  VoicePersonaNotifier() : super(AppConstants.defaultVoicePersona) {
+    _load();
+  }
+  static const String _boxName = 'settings_voice';
+  static const String _key = 'voicePersonaId';
+
+  Future<void> _load() async {
+    final box = await Hive.openBox<String>(_boxName);
+    final id = box.get(_key);
+    if (id != null) {
+      state = VoicePersonas.fromId(id);
+    }
+  }
+
+  Future<void> setPersona(VoicePersona persona) async {
+    state = persona;
+    final box = await Hive.openBox<String>(_boxName);
+    await box.put(_key, persona.id);
+  }
+}
+

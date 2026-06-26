@@ -7,8 +7,8 @@ import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
+import 'features/home/domain/entities/brainstorm.dart';
 import 'features/home/domain/entities/brainstorm_category.dart';
-import 'features/home/domain/entities/brainstorm_result.dart';
 import 'features/home/presentation/providers/settings_providers.dart';
 import 'features/home/presentation/screens/brainstorm_screen.dart';
 import 'features/home/presentation/screens/home_screen.dart';
@@ -161,8 +161,8 @@ final _router = GoRouter(
     GoRoute(
       path: '/result',
       builder: (_, state) {
-        final result = state.extra as BrainstormResult;
-        return ResultScreen(result: result);
+        final brainstorm = state.extra as Brainstorm;
+        return ResultScreen(brainstorm: brainstorm);
       },
     ),
     GoRoute(

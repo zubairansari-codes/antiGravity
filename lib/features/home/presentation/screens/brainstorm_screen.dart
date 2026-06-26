@@ -16,8 +16,11 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/animations/typing_indicator.dart';
 import '../../../../core/widgets/animations/voice_wave.dart';
+import '../../domain/entities/artefact_type.dart';
+import '../../domain/entities/brainstorm.dart';
 import '../../domain/entities/brainstorm_category.dart';
 import '../../domain/entities/chat_message.dart';
+import '../../domain/entities/conversation_mode.dart';
 import '../providers/brainstorm_session_vm.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/voice_control_bar.dart';
@@ -86,6 +89,27 @@ class _BrainstormScreenState extends ConsumerState<BrainstormScreen> {
     _liveTranscriptTimer = null;
   }
 
+  Brainstorm _brainstormFromState(BrainstormSessionState s) {
+    final firstUserMsg = s.messages
+        .where((m) => m.role == MessageRole.user)
+        .firstOrNull;
+    final title = firstUserMsg != null
+        ? (firstUserMsg.content.length > 50
+            ? '${firstUserMsg.content.substring(0, 50)}…'
+            : firstUserMsg.content)
+        : 'Untitled session';
+
+    return Brainstorm(
+      id: s.sessionId,
+      title: title,
+      category: s.category,
+      messages: s.messages,
+      result: s.result,
+      artefacts: s.artefacts,
+      createdAt: DateTime.now(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(brainstormSessionVmProvider);
@@ -103,7 +127,7 @@ class _BrainstormScreenState extends ConsumerState<BrainstormScreen> {
       if (next.result != null && prev?.result == null) {
         // Save session before navigating.
         notifier.saveSession();
-        context.push('/result', extra: next.result);
+        context.push('/result', extra: _brainstormFromState(next));
       }
 
       // Auto-scroll on new messages.
@@ -212,6 +236,30 @@ class _BrainstormScreenState extends ConsumerState<BrainstormScreen> {
               ),
             ),
 
+          // Mode / context strip
+          if (state.messages.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Row(
+                children: [
+                  Chip(
+                    label: Text(state.mode.label),
+                    avatar: const Icon(Icons.bubble_chart, size: 16),
+                    backgroundColor: AppColors.primary.withOpacity(0.08),
+                    side: BorderSide.none,
+                  ),
+                  const Spacer(),
+                  if (state.requestedArtefact != null)
+                    Chip(
+                      label: Text('→ ${state.requestedArtefact!.label}'),
+                      avatar: const Icon(Icons.auto_awesome, size: 16),
+                      backgroundColor: AppColors.accent.withOpacity(0.12),
+                      side: BorderSide.none,
+                    ),
+                ],
+              ),
+            ),
+
           // Chat messages + barge-in handler
           Expanded(
             child: GestureDetector(
@@ -313,6 +361,17 @@ class _BrainstormScreenState extends ConsumerState<BrainstormScreen> {
               ),
             ),
 
+          // Improv cue toolbar
+          if (state.messages.isNotEmpty && !state.isProcessing)
+            _ImprovCueToolbar(
+              onCue: (cue, {mode, artefact}) => notifier.sendCue(
+                cue,
+                mode: mode,
+                artefact: artefact,
+              ),
+              onMakeTangible: () => _showArtefactPicker(context),
+            ),
+
           // Voice control bar
           VoiceControlBar(
             isListening: state.isListening,
@@ -344,6 +403,24 @@ class _BrainstormScreenState extends ConsumerState<BrainstormScreen> {
       ),
       builder: (context) => const _PaywallSheet(),
     );
+  }
+
+  Future<void> _showArtefactPicker(BuildContext context) async {
+    final notifier = ref.read(brainstormSessionVmProvider.notifier);
+    final type = await showModalBottomSheet<ArtefactType>(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => const _ArtefactPickerSheet(),
+    );
+    if (type != null) {
+      notifier.sendCue(
+        'Make this tangible as a ${type.label}.',
+        artefact: type,
+      );
+    }
   }
 }
 
@@ -511,13 +588,153 @@ class _WelcomePrompt extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Tap the mic and tell me your idea.\nI\'ll challenge it, sharpen it, and\ngive you a plan.',
+              'Tap the mic and start riffing.\nI\'ll yes-and your idea, challenge it,\nand help you make it tangible.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.onSurfaceVariant,
                 height: 1.5,
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ImprovCueToolbar extends StatelessWidget {
+
+  const _ImprovCueToolbar({
+    required this.onCue,
+    required this.onMakeTangible,
+  });
+  final void Function(String cue, {ConversationMode? mode, ArtefactType? artefact}) onCue;
+  final VoidCallback onMakeTangible;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: [
+            _CueChip(
+              icon: Icons.add_circle_outline,
+              label: 'Yes, and…',
+              onTap: () => onCue('Yes, and…', mode: ConversationMode.riff),
+            ),
+            _CueChip(
+              icon: Icons.flip_camera_android,
+              label: 'Flip it',
+              onTap: () => onCue(
+                'Flip it. Give me the opposite take.',
+                mode: ConversationMode.flip,
+              ),
+            ),
+            _CueChip(
+              icon: Icons.arrow_downward,
+              label: 'Go deeper',
+              onTap: () => onCue(
+                'Go deeper on the most interesting thread.',
+                mode: ConversationMode.deepDive,
+              ),
+            ),
+            _CueChip(
+              icon: Icons.block,
+              label: 'Add constraint',
+              onTap: () => onCue('Add a creative constraint.'),
+            ),
+            _CueChip(
+              icon: Icons.merge_type,
+              label: 'Synthesise',
+              onTap: () => onCue(
+                'Synthesise what we have so far.',
+                mode: ConversationMode.synthesise,
+              ),
+            ),
+            _CueChip(
+              icon: Icons.auto_awesome,
+              label: 'Make tangible',
+              onTap: onMakeTangible,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CueChip extends StatelessWidget {
+
+  const _CueChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: ActionChip(
+        avatar: Icon(icon, size: 18, color: AppColors.primary),
+        label: Text(label),
+        onPressed: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        backgroundColor: AppColors.primary.withOpacity(0.08),
+        side: BorderSide.none,
+      ),
+    );
+  }
+}
+
+class _ArtefactPickerSheet extends StatelessWidget {
+
+  const _ArtefactPickerSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'What should we make?',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Pick the artefact format that would be most useful right now.',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: ArtefactType.values.where((t) => t != ArtefactType.rawNotes).map((type) {
+                return ActionChip(
+                  avatar: Icon(type.icon, size: 18, color: AppColors.primary),
+                  label: Text(type.label),
+                  onPressed: () => Navigator.of(context).pop(type),
+                  backgroundColor: AppColors.primary.withOpacity(0.08),
+                  side: BorderSide.none,
+                );
+              }).toList(),
             ),
           ],
         ),

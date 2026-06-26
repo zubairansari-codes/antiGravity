@@ -10,10 +10,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../domain/entities/artefact_type.dart';
 import '../../domain/entities/brainstorm_category.dart';
 import '../../domain/entities/brainstorm.dart';
 import '../../domain/entities/brainstorm_result.dart';
 import '../../domain/entities/chat_message.dart';
+import '../../domain/entities/conversation_artefact.dart';
+import '../../domain/entities/conversation_mode.dart';
 import '../../domain/usecases/send_message.dart';
 import 'providers.dart';
 import 'settings_providers.dart';
@@ -28,22 +31,28 @@ class BrainstormSessionState {
     this.isSpeaking = false,
     this.isProcessing = false,
     this.result,
+    this.artefacts = const [],
     this.error,
     this.sessionId = '',
     this.category = BrainstormCategory.general,
     this.liveTranscript,
     this.showPaywall = false,
+    this.mode = ConversationMode.riff,
+    this.requestedArtefact,
   });
   final List<ChatMessage> messages;
   final bool isListening;
   final bool isSpeaking;
   final bool isProcessing;
   final BrainstormResult? result;
+  final List<ConversationArtefact> artefacts;
   final String? error;
   final String sessionId;
   final BrainstormCategory category;
   final String? liveTranscript;
   final bool showPaywall;
+  final ConversationMode mode;
+  final ArtefactType? requestedArtefact;
 
   BrainstormSessionState copyWith({
     List<ChatMessage>? messages,
@@ -51,11 +60,14 @@ class BrainstormSessionState {
     bool? isSpeaking,
     bool? isProcessing,
     BrainstormResult? result,
+    List<ConversationArtefact>? artefacts,
     String? error,
     String? sessionId,
     BrainstormCategory? category,
     String? liveTranscript,
     bool? showPaywall,
+    ConversationMode? mode,
+    ArtefactType? requestedArtefact,
   }) {
     return BrainstormSessionState(
       messages: messages ?? this.messages,
@@ -63,11 +75,14 @@ class BrainstormSessionState {
       isSpeaking: isSpeaking ?? this.isSpeaking,
       isProcessing: isProcessing ?? this.isProcessing,
       result: result ?? this.result,
+      artefacts: artefacts ?? this.artefacts,
       error: error ?? this.error,
       sessionId: sessionId ?? this.sessionId,
       category: category ?? this.category,
       liveTranscript: liveTranscript ?? this.liveTranscript,
       showPaywall: showPaywall ?? this.showPaywall,
+      mode: mode ?? this.mode,
+      requestedArtefact: requestedArtefact ?? this.requestedArtefact,
     );
   }
 }
@@ -167,6 +182,7 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
           sessionId: session.id,
           messages: session.messages,
           result: session.result,
+          artefacts: session.artefacts,
           category: session.category,
         );
       },
@@ -231,6 +247,8 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
     // Ensure any previous session is stopped.
     await speechService.stopListening();
 
+    final silenceMs = ref.read(silenceTimeoutProvider);
+
     state = state.copyWith(isListening: true, error: null, liveTranscript: null);
     debugPrint('[AG] startListening: began (continuous=$_continuousMode)');
 
@@ -256,6 +274,7 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
             });
           }
         },
+        pauseDuration: Duration(milliseconds: silenceMs),
       );
     } catch (e) {
       debugPrint('[AG] STT exception: $e');
@@ -282,7 +301,7 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
   Future<void> interruptAndListen() async {
     debugPrint('[AG] Barge-in: interrupting AI and restarting listening');
     final speechService = ref.read(speechServiceProvider);
-    await speechService.stopSpeaking();
+    await speechService.interruptSpeaking();
     state = state.copyWith(isSpeaking: false);
     HapticFeedback.mediumImpact();
     await startListening();
@@ -360,6 +379,10 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
       messages: updatedMessages,
       requestFinalOutput: wantsWrapUp,
       category: state.category,
+      mode: state.mode,
+      requestedArtefact: state.requestedArtefact,
+      previousArtefacts: state.artefacts,
+      contextSummary: _buildContextSummary(),
     ));
 
     result.fold(
@@ -396,7 +419,8 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
         // Speak the response via ElevenLabs.
         try {
           final speechService = ref.read(speechServiceProvider);
-          await speechService.speak(aiResponse.text);
+          final persona = ref.read(voicePersonaProvider);
+          await speechService.speak(aiResponse.text, persona: persona);
         } catch (e) {
           debugPrint('[AG] TTS error: $e');
         }
@@ -404,9 +428,13 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
         state = state.copyWith(isSpeaking: false);
 
         // If final result, set it and stop continuous mode.
-        if (aiResponse.isFinal && aiResponse.structuredResult != null) {
+        if (aiResponse.isFinal) {
           _continuousMode = false;
-          state = state.copyWith(result: aiResponse.structuredResult);
+          state = state.copyWith(
+            result: aiResponse.structuredResult,
+            artefacts: aiResponse.artefacts,
+            requestedArtefact: null,
+          );
           HapticFeedback.vibrate();
           await Future.delayed(const Duration(milliseconds: 100));
           HapticFeedback.vibrate();
@@ -434,6 +462,10 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
       messages: state.messages,
       requestFinalOutput: true,
       category: state.category,
+      mode: state.mode,
+      requestedArtefact: state.requestedArtefact,
+      previousArtefacts: state.artefacts,
+      contextSummary: _buildContextSummary(),
     ));
 
     result.fold(
@@ -450,6 +482,8 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
           messages: [...state.messages, aiMessage],
           isProcessing: false,
           result: aiResponse.structuredResult,
+          artefacts: aiResponse.artefacts,
+          requestedArtefact: null,
         );
         HapticFeedback.vibrate();
         Future.delayed(const Duration(milliseconds: 100), HapticFeedback.vibrate);
@@ -477,6 +511,7 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
       title: title,
       messages: state.messages,
       result: state.result,
+      artefacts: state.artefacts,
       createdAt: DateTime.now(),
     );
 
@@ -501,5 +536,33 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
       'done',
     ];
     return triggers.any((t) => lower.contains(t));
+  }
+
+  /// Switch the improvisation mode for the next AI response.
+  void setMode(ConversationMode mode) {
+    state = state.copyWith(mode: mode);
+  }
+
+  /// Request a specific artefact format for the next final output.
+  void requestArtefact(ArtefactType type) {
+    state = state.copyWith(requestedArtefact: type);
+  }
+
+  /// Send a pre-canned improvisation cue (e.g. "Flip it").
+  Future<void> sendCue(
+    String cue, {
+    ConversationMode? mode,
+    ArtefactType? artefact,
+  }) async {
+    if (mode != null) state = state.copyWith(mode: mode);
+    if (artefact != null) state = state.copyWith(requestedArtefact: artefact);
+    await _handleUserInput(cue);
+  }
+
+  /// Lightweight context summary for the prompt engine.
+  String? _buildContextSummary() {
+    if (state.messages.length < 4) return null;
+    // Placeholder: Phase 4 will wire ConversationContextManager here.
+    return null;
   }
 }

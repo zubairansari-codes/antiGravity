@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/voice_personas.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../providers/home_viewmodel.dart';
 import '../providers/settings_providers.dart';
@@ -39,6 +41,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final themeMode = ref.watch(themeModeProvider);
     final ttsSpeed = ref.watch(ttsSpeedProvider);
     final hapticsEnabled = ref.watch(hapticsEnabledProvider);
+    final silenceTimeout = ref.watch(silenceTimeoutProvider);
+    final voicePersona = ref.watch(voicePersonaProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -67,6 +71,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             value: ttsSpeed,
             onChanged: (speed) =>
                 ref.read(ttsSpeedProvider.notifier).setSpeed(speed),
+          ),
+          _SilenceTimeoutTile(
+            value: silenceTimeout,
+            onChanged: (ms) =>
+                ref.read(silenceTimeoutProvider.notifier).setTimeout(ms),
+          ),
+          _VoicePersonaTile(
+            value: voicePersona,
+            onChanged: (persona) =>
+                ref.read(voicePersonaProvider.notifier).setPersona(persona),
           ),
 
           const Divider(height: 32),
@@ -280,6 +294,104 @@ class _TtsSpeedTile extends StatelessWidget {
                       fontWeight: isSelected ? FontWeight.w700 : null,
                     ),
                   ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SilenceTimeoutTile extends StatelessWidget {
+
+  const _SilenceTimeoutTile({
+    required this.value,
+    required this.onChanged,
+  });
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    const presets = AppConstants.silenceTimeoutPresets;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Silence Timeout',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'How long to wait after you stop speaking',
+            style: TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: presets.map((ms) {
+              final isSelected = value == ms;
+              final label = ms >= 1000 ? '${ms ~/ 1000}s' : '${ms}ms';
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: ChoiceChip(
+                    label: Text(label),
+                    selected: isSelected,
+                    onSelected: (_) => onChanged(ms),
+                    selectedColor: AppColors.primary.withOpacity(0.15),
+                    labelStyle: TextStyle(
+                      color: isSelected ? AppColors.primary : null,
+                      fontWeight: isSelected ? FontWeight.w700 : null,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VoicePersonaTile extends StatelessWidget {
+
+  const _VoicePersonaTile({
+    required this.value,
+    required this.onChanged,
+  });
+  final VoicePersona value;
+  final ValueChanged<VoicePersona> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Voice Persona',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: VoicePersonas.all.map((persona) {
+              final isSelected = persona.id == value.id;
+              return ChoiceChip(
+                label: Text(persona.label.split(' —').first),
+                selected: isSelected,
+                onSelected: (_) => onChanged(persona),
+                selectedColor: AppColors.primary.withOpacity(0.15),
+                labelStyle: TextStyle(
+                  color: isSelected ? AppColors.primary : null,
+                  fontWeight: isSelected ? FontWeight.w700 : null,
                 ),
               );
             }).toList(),
