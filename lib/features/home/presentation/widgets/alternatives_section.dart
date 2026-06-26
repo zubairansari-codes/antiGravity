@@ -1,14 +1,15 @@
 /// Alternatives section — displays alternative angles on the result screen.
 library;
 
+
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 
 class AlternativesSection extends StatelessWidget {
-  final List<String> alternatives;
 
   const AlternativesSection({super.key, required this.alternatives});
+  final List<String> alternatives;
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +33,9 @@ class AlternativesSection extends StatelessWidget {
 }
 
 class _AlternativeCard extends StatelessWidget {
-  final String text;
 
   const _AlternativeCard({required this.text});
+  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +53,7 @@ class _AlternativeCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
+          const Icon(
             Icons.alt_route_rounded,
             size: 18,
             color: AppColors.accent,

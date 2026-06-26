@@ -8,9 +8,12 @@ import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/errors/failures.dart';
 import '../entities/ai_response.dart';
+import '../entities/artefact_type.dart';
 import '../entities/brainstorm.dart';
 import '../entities/brainstorm_category.dart';
 import '../entities/chat_message.dart';
+import '../entities/conversation_artefact.dart';
+import '../entities/conversation_mode.dart';
 
 abstract class BrainstormRepository {
   /// Send conversation history to Groq and get an AI response.
@@ -19,6 +22,10 @@ abstract class BrainstormRepository {
     List<ChatMessage> messages, {
     bool requestFinalOutput = false,
     required BrainstormCategory category,
+    ConversationMode mode = ConversationMode.riff,
+    ArtefactType? requestedArtefact,
+    List<ConversationArtefact> previousArtefacts = const [],
+    String? contextSummary,
   });
 
   /// Load all saved brainstorms from local cache.

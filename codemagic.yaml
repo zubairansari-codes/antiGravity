@@ -15,8 +15,12 @@ workflows:
           echo "ELEVENLABS_API_KEY=$ELEVENLABS_API_KEY" >> .env
       - name: Get Flutter packages
         script: flutter pub get
+      - name: Run tests
+        script: flutter test
+      - name: Run linter
+        script: flutter analyze
       - name: Build APK
-        script: flutter build apk --release
+        script: flutter build apk --release --obfuscate --split-debug-info=symbols/ --dart-define=GROQ_API_KEY=$GROQ_API_KEY --dart-define=ELEVENLABS_API_KEY=$ELEVENLABS_API_KEY
     artifacts:
       - build/**/outputs/**/*.apk
 
@@ -42,6 +46,10 @@ workflows:
           echo "ELEVENLABS_API_KEY=$ELEVENLABS_API_KEY" >> .env
       - name: Get Flutter packages
         script: flutter pub get
+      - name: Run tests
+        script: flutter test
+      - name: Run linter
+        script: flutter analyze
       - name: Install CocoaPods
         script: |
           cd ios
@@ -50,12 +58,12 @@ workflows:
         script: |
           keychain initialize
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
-            --type IOS_APP_DEVELOPMENT \
+            --type IOS_APP_STORE \
             --create
           keychain add-certificates
           xcode-project use-profiles
       - name: Build iOS
-        script: flutter build ipa --release --export-options-plist=/Users/builder/export_options.plist
+        script: flutter build ipa --release --export-options-plist=/Users/builder/export_options.plist --dart-define=GROQ_API_KEY=$GROQ_API_KEY --dart-define=ELEVENLABS_API_KEY=$ELEVENLABS_API_KEY
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
@@ -83,6 +91,10 @@ workflows:
           echo "ELEVENLABS_API_KEY=$ELEVENLABS_API_KEY" >> .env
       - name: Get Flutter packages
         script: flutter pub get
+      - name: Run tests
+        script: flutter test
+      - name: Run linter
+        script: flutter analyze
       - name: Install CocoaPods
         script: |
           cd ios

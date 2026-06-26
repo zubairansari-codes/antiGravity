@@ -6,10 +6,6 @@ library;
 enum MessageRole { user, assistant }
 
 class ChatMessage {
-  final String id;
-  final String content;
-  final MessageRole role;
-  final DateTime timestamp;
 
   const ChatMessage({
     required this.id,
@@ -33,6 +29,10 @@ class ChatMessage {
         role: MessageRole.assistant,
         timestamp: DateTime.now(),
       );
+  final String id;
+  final String content;
+  final MessageRole role;
+  final DateTime timestamp;
 
   @override
   bool operator ==(Object other) =>

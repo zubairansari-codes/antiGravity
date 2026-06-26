@@ -1,6 +1,22 @@
 # Secrets
 .env
 
+# Node / MCP tooling
+node_modules/
+package.json
+package-lock.json
+serve.js
+.playwright-mcp/
+
+# Claude Code configuration and skills (kept separate from project source)
+.claude/
+.mcp.json
+AGENT_SPEC.md
+
+# Generated screenshots / temp assets
+web-home.png
+design/temp/
+
 # Miscellaneous
 *.class
 *.log

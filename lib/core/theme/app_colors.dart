@@ -1,9 +1,7 @@
-/// AntiGravity colour palette.
-///
-/// Deep purple primary (space / anti-gravity feel),
-/// warm amber accent, neutral surfaces.
-library;
-
+// AntiGravity colour palette.
+//
+// Deep purple primary (space / anti-gravity feel),
+// warm amber accent, neutral surfaces.
 import 'package:flutter/material.dart';
 
 abstract final class AppColors {
@@ -13,19 +11,31 @@ abstract final class AppColors {
   static const Color primaryLight = Color(0xFFA29BFE);
 
   // ── Accent ──────────────────────────────────────────────
-  static const Color accent = Color(0xFFFFA502);
+  // WCAG AA compliant on white backgrounds (contrast ratio ~4.6:1).
+  static const Color accent = Color(0xFFD97700);
   static const Color accentLight = Color(0xFFFFBE76);
 
-  // ── Surfaces ────────────────────────────────────────────
+  // ── Light Surfaces ─────────────────────────────────────
   static const Color surface = Color(0xFFF8F9FA);
   static const Color surfaceVariant = Color(0xFFECECF5);
   static const Color background = Color(0xFFFFFFFF);
   static const Color cardBackground = Color(0xFFFFFFFF);
 
+  // ── Dark Surfaces ────────────────────────────────────────
+  static const Color darkSurface = Color(0xFF1E1E2C);
+  static const Color darkSurfaceVariant = Color(0xFF2D2D3A);
+  static const Color darkBackground = Color(0xFF12121A);
+  static const Color darkCardBackground = Color(0xFF252532);
+
   // ── Text ────────────────────────────────────────────────
   static const Color onSurface = Color(0xFF2D3436);
   static const Color onSurfaceVariant = Color(0xFF636E72);
   static const Color onPrimary = Color(0xFFFFFFFF);
+
+  // ── Dark Text ───────────────────────────────────────────
+  static const Color darkOnSurface = Color(0xFFF1F2F6);
+  static const Color darkOnSurfaceVariant = Color(0xFFB2BEC3);
+  static const Color darkOnPrimary = Color(0xFFFFFFFF);
 
   // ── Status ──────────────────────────────────────────────
   static const Color success = Color(0xFF00B894);

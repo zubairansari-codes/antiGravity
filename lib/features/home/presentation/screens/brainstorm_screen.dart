@@ -1,41 +1,50 @@
 /// Brainstorm screen — live voice conversation with the AI agent.
 ///
-/// Shows: voice wave animation, chat messages, and voice control bar.
-/// "Wrap it up" button in the app bar triggers final output generation.
+/// Shows: voice wave animation, chat messages, live transcript, voice control bar,
+/// barge-in support, accessibility labels, and paywall modal.
 library;
 
+
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/animations/typing_indicator.dart';
 import '../../../../core/widgets/animations/voice_wave.dart';
+import '../../domain/entities/artefact_type.dart';
+import '../../domain/entities/brainstorm.dart';
 import '../../domain/entities/brainstorm_category.dart';
 import '../../domain/entities/chat_message.dart';
+import '../../domain/entities/conversation_mode.dart';
 import '../providers/brainstorm_session_vm.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/voice_control_bar.dart';
 
 class BrainstormScreen extends ConsumerStatefulWidget {
-  final BrainstormCategory category;
 
   const BrainstormScreen({
     super.key,
     this.category = BrainstormCategory.general,
   });
+  final BrainstormCategory category;
 
   @override
-  ConsumerState<BrainstormScreen> createState() =>
-      _BrainstormScreenState();
+  ConsumerState<BrainstormScreen> createState() => _BrainstormScreenState();
 }
 
 class _BrainstormScreenState extends ConsumerState<BrainstormScreen> {
   final _scrollController = ScrollController();
+  Timer? _liveTranscriptTimer;
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _liveTranscriptTimer?.cancel();
     super.dispose();
   }
 
@@ -60,59 +69,128 @@ class _BrainstormScreenState extends ConsumerState<BrainstormScreen> {
     });
   }
 
+  /// Poll the speech-to-text singleton for partial results.
+  void _startLiveTranscriptPolling() {
+    _liveTranscriptTimer?.cancel();
+    _liveTranscriptTimer = Timer.periodic(
+      const Duration(milliseconds: 200),
+      (_) {
+        final notifier = ref.read(brainstormSessionVmProvider.notifier);
+        final words = stt.SpeechToText().lastRecognizedWords;
+        if (words.isNotEmpty) {
+          notifier.updateLiveTranscript(words);
+        }
+      },
+    );
+  }
+
+  void _stopLiveTranscriptPolling() {
+    _liveTranscriptTimer?.cancel();
+    _liveTranscriptTimer = null;
+  }
+
+  Brainstorm _brainstormFromState(BrainstormSessionState s) {
+    final firstUserMsg = s.messages
+        .where((m) => m.role == MessageRole.user)
+        .firstOrNull;
+    final title = firstUserMsg != null
+        ? (firstUserMsg.content.length > 50
+            ? '${firstUserMsg.content.substring(0, 50)}…'
+            : firstUserMsg.content)
+        : 'Untitled session';
+
+    return Brainstorm(
+      id: s.sessionId,
+      title: title,
+      category: s.category,
+      messages: s.messages,
+      result: s.result,
+      artefacts: s.artefacts,
+      createdAt: DateTime.now(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(brainstormSessionVmProvider);
     final notifier = ref.read(brainstormSessionVmProvider.notifier);
+
+    // Start/stop live transcript polling based on listening state.
+    if (state.isListening) {
+      _startLiveTranscriptPolling();
+    } else {
+      _stopLiveTranscriptPolling();
+    }
 
     // Listen for result → navigate to result screen.
     ref.listen(brainstormSessionVmProvider, (prev, next) {
       if (next.result != null && prev?.result == null) {
         // Save session before navigating.
         notifier.saveSession();
-        context.push('/result', extra: next.result);
+        context.push('/result', extra: _brainstormFromState(next));
       }
 
       // Auto-scroll on new messages.
       if ((prev?.messages.length ?? 0) != next.messages.length) {
         _scrollToBottom();
       }
+
+      // Show paywall if triggered.
+      if (next.showPaywall && !(prev?.showPaywall ?? false)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _showPaywallModal(context);
+        });
+      }
     });
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(widget.category.icon, size: 18, color: AppColors.primary),
-            const SizedBox(width: 8),
-            Text(widget.category.label),
-          ],
+        title: Semantics(
+          label: 'Brainstorming with ${widget.category.label}',
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(widget.category.icon, size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(widget.category.label),
+            ],
+          ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            // Save before leaving if there are messages.
-            if (state.messages.isNotEmpty) {
-              notifier.saveSession();
-            }
-            context.pop();
-          },
+        leading: Semantics(
+          label: 'Back to home',
+          button: true,
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () {
+              // Save before leaving if there are messages.
+              if (state.messages.isNotEmpty) {
+                notifier.saveSession();
+              }
+              context.pop();
+            },
+          ),
         ),
         actions: [
           if (state.messages.length >= 2)
-            TextButton.icon(
-              onPressed: state.isProcessing
-                  ? null
-                  : () => notifier.generateFinalResult(),
-              icon: Icon(Icons.auto_awesome,
-                  size: 18,
-                  color: state.isProcessing ? null : AppColors.accent),
-              label: Text(
-                'WRAP UP',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: state.isProcessing ? null : AppColors.primary,
+            Semantics(
+              label: 'Wrap up and generate final plan',
+              button: true,
+              child: TextButton.icon(
+                onPressed: state.isProcessing
+                    ? null
+                    : () {
+                        HapticFeedback.heavyImpact();
+                        notifier.generateFinalResult();
+                      },
+                icon: Icon(Icons.auto_awesome,
+                    size: 18,
+                    color: state.isProcessing ? null : AppColors.accent),
+                label: Text(
+                  'WRAP UP',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: state.isProcessing ? null : AppColors.primary,
+                  ),
                 ),
               ),
             ),
@@ -122,64 +200,244 @@ class _BrainstormScreenState extends ConsumerState<BrainstormScreen> {
         children: [
           // Voice wave animation
           if (state.isListening || state.isSpeaking)
-            VoiceWaveAnimation(
-              isActive: state.isListening,
-              isSpeaking: state.isSpeaking,
+            ExcludeSemantics(
+              child: VoiceWaveAnimation(
+                isActive: state.isListening,
+                isSpeaking: state.isSpeaking,
+              ),
             ),
 
-          // Chat messages
-          Expanded(
-            child: state.messages.isEmpty
-                ? _WelcomePrompt()
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                    itemCount: state.messages.length,
-                    itemBuilder: (context, index) {
-                      final msg = state.messages[index];
-                      return ChatBubble(
-                        message: msg,
-                        isUser: msg.role == MessageRole.user,
-                      );
-                    },
+          // Barge-in indicator
+          if (state.isSpeaking)
+            Semantics(
+              label: 'AI is speaking. Tap the chat area to interrupt.',
+              child: GestureDetector(
+                onTap: () => notifier.interruptAndListen(),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  color: AppColors.accent.withOpacity(0.1),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.touch_app, size: 16, color: AppColors.accent),
+                      SizedBox(width: 6),
+                      Text(
+                        'Tap to interrupt',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.accent,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+              ),
+            ),
+
+          // Mode / context strip
+          if (state.messages.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Row(
+                children: [
+                  Chip(
+                    label: Text(state.mode.label),
+                    avatar: const Icon(Icons.bubble_chart, size: 16),
+                    backgroundColor: AppColors.primary.withOpacity(0.08),
+                    side: BorderSide.none,
+                  ),
+                  const Spacer(),
+                  if (state.requestedArtefact != null)
+                    Chip(
+                      label: Text('→ ${state.requestedArtefact!.label}'),
+                      avatar: const Icon(Icons.auto_awesome, size: 16),
+                      backgroundColor: AppColors.accent.withOpacity(0.12),
+                      side: BorderSide.none,
+                    ),
+                ],
+              ),
+            ),
+
+          // Conversation summary strip
+          if (state.contextSummary != null && state.contextSummary!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Semantics(
+                label: 'Conversation summary: ${state.contextSummary}',
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    state.contextSummary!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.onSurfaceVariant,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // Chat messages + barge-in handler
+          Expanded(
+            child: GestureDetector(
+              onTap: state.isSpeaking
+                  ? () => notifier.interruptAndListen()
+                  : null,
+              behavior: HitTestBehavior.translucent,
+              child: state.messages.isEmpty
+                  ? _WelcomePrompt()
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      itemCount: state.messages.length,
+                      itemBuilder: (context, index) {
+                        final msg = state.messages[index];
+                        return ChatBubble(
+                          message: msg,
+                          isUser: msg.role == MessageRole.user,
+                        );
+                      },
+                    ),
+            ),
           ),
 
-          // Typing indicator
-          if (state.isProcessing)
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 20, vertical: 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
+          // Live transcript preview
+          if (state.liveTranscript != null && state.isListening)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Semantics(
+                label: 'Live transcript: ${state.liveTranscript}',
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceVariant,
+                    color: AppColors.primary.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.2),
+                    ),
                   ),
-                  child: const TypingIndicator(),
+                  child: Text(
+                    state.liveTranscript!,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 15,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
                 ),
               ),
             ),
 
-          // Error banner
-          if (state.error != null)
-            Container(
-              width: double.infinity,
+          // Typing indicator
+          if (state.isProcessing)
+            Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 10),
-              color: AppColors.error.withOpacity(0.1),
-              child: Text(
-                state.error!,
-                style: TextStyle(
-                  color: AppColors.error,
-                  fontSize: 13,
+                  horizontal: 20, vertical: 8),
+              child: Semantics(
+                label: 'AI is thinking',
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceVariant,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const ExcludeSemantics(
+                      child: TypingIndicator(),
+                    ),
+                  ),
                 ),
               ),
+            ),
+
+          // Error banner with LiveRegion
+          if (state.error != null)
+            Semantics(
+              liveRegion: true,
+              label: 'Error: ${state.error}',
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 10),
+                color: AppColors.error.withOpacity(0.1),
+                child: Text(
+                  state.error!,
+                  style: const TextStyle(
+                    color: AppColors.error,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+
+          // Soft moderation warning banner
+          if (state.warning != null)
+            Semantics(
+              liveRegion: true,
+              label: 'Wellness note: ${state.warning}',
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
+                color: AppColors.warning.withOpacity(0.12),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.favorite_border,
+                      size: 18,
+                      color: AppColors.warning,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        state.warning!,
+                        style: const TextStyle(
+                          color: AppColors.warning,
+                          fontSize: 13,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 18),
+                      color: AppColors.warning,
+                      onPressed: notifier.dismissWarning,
+                      tooltip: 'Dismiss',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // Improv cue toolbar
+          if (state.messages.isNotEmpty && !state.isProcessing)
+            _ImprovCueToolbar(
+              onCue: (cue, {mode, artefact}) => notifier.sendCue(
+                cue,
+                mode: mode,
+                artefact: artefact,
+              ),
+              onMakeTangible: () => _showArtefactPicker(context),
             ),
 
           // Voice control bar
@@ -187,12 +445,183 @@ class _BrainstormScreenState extends ConsumerState<BrainstormScreen> {
             isListening: state.isListening,
             onMicTap: () {
               if (state.isListening) {
+                HapticFeedback.lightImpact();
                 notifier.stopListening();
               } else {
+                HapticFeedback.lightImpact();
                 notifier.startListening();
               }
             },
             onTextSubmit: (text) => notifier.handleTextInput(text),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPaywallModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => const _PaywallSheet(),
+    );
+  }
+
+  Future<void> _showArtefactPicker(BuildContext context) async {
+    final notifier = ref.read(brainstormSessionVmProvider.notifier);
+    final type = await showModalBottomSheet<ArtefactType>(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => const _ArtefactPickerSheet(),
+    );
+    if (type != null) {
+      notifier.sendCue(
+        'Make this tangible as a ${type.label}.',
+        artefact: type,
+      );
+    }
+  }
+}
+
+class _PaywallSheet extends ConsumerWidget {
+  const _PaywallSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 48),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.lock_outline,
+                  color: AppColors.accent,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "You've used your 3 free brainstorms today!",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Upgrade to AntiGravity Pro for unlimited brainstorming.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Feature checklist
+          const _FeatureCheck(icon: Icons.all_inclusive, text: 'Unlimited sessions'),
+          const _FeatureCheck(icon: Icons.record_voice_over, text: 'Premium voices'),
+          const _FeatureCheck(icon: Icons.dark_mode, text: 'Dark mode'),
+          const _FeatureCheck(icon: Icons.share, text: 'Export to PDF & Markdown'),
+          const _FeatureCheck(icon: Icons.support_agent, text: 'Priority support'),
+
+          const SizedBox(height: 24),
+
+          // Primary CTA
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: FilledButton(
+              onPressed: () {
+                HapticFeedback.mediumImpact();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Coming soon!')),
+                );
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: const Text(
+                'Start 7-Day Free Trial',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Secondary CTA
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton(
+              onPressed: () {
+                ref.read(brainstormSessionVmProvider.notifier).dismissPaywall();
+                Navigator.of(context).pop();
+              },
+              style: OutlinedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: const Text('Maybe Later'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeatureCheck extends StatelessWidget {
+
+  const _FeatureCheck({required this.icon, required this.text});
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle, size: 20, color: AppColors.success),
+          const SizedBox(width: 12),
+          Text(
+            text,
+            style: const TextStyle(fontSize: 15),
           ),
         ],
       ),
@@ -209,13 +638,15 @@ class _WelcomePrompt extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.record_voice_over_rounded,
-              size: 48,
-              color: AppColors.primary.withOpacity(0.3),
+            ExcludeSemantics(
+              child: Icon(
+                Icons.record_voice_over_rounded,
+                size: 48,
+                color: AppColors.primary.withOpacity(0.3),
+              ),
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'What\'s on your mind?',
               style: TextStyle(
                 fontSize: 20,
@@ -224,14 +655,154 @@ class _WelcomePrompt extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              'Tap the mic and tell me your idea.\nI\'ll challenge it, sharpen it, and\ngive you a plan.',
+            const Text(
+              'Tap the mic and start riffing.\nI\'ll yes-and your idea, challenge it,\nand help you make it tangible.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.onSurfaceVariant,
                 height: 1.5,
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ImprovCueToolbar extends StatelessWidget {
+
+  const _ImprovCueToolbar({
+    required this.onCue,
+    required this.onMakeTangible,
+  });
+  final void Function(String cue, {ConversationMode? mode, ArtefactType? artefact}) onCue;
+  final VoidCallback onMakeTangible;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: [
+            _CueChip(
+              icon: Icons.add_circle_outline,
+              label: 'Yes, and…',
+              onTap: () => onCue('Yes, and…', mode: ConversationMode.riff),
+            ),
+            _CueChip(
+              icon: Icons.flip_camera_android,
+              label: 'Flip it',
+              onTap: () => onCue(
+                'Flip it. Give me the opposite take.',
+                mode: ConversationMode.flip,
+              ),
+            ),
+            _CueChip(
+              icon: Icons.arrow_downward,
+              label: 'Go deeper',
+              onTap: () => onCue(
+                'Go deeper on the most interesting thread.',
+                mode: ConversationMode.deepDive,
+              ),
+            ),
+            _CueChip(
+              icon: Icons.block,
+              label: 'Add constraint',
+              onTap: () => onCue('Add a creative constraint.'),
+            ),
+            _CueChip(
+              icon: Icons.merge_type,
+              label: 'Synthesise',
+              onTap: () => onCue(
+                'Synthesise what we have so far.',
+                mode: ConversationMode.synthesise,
+              ),
+            ),
+            _CueChip(
+              icon: Icons.auto_awesome,
+              label: 'Make tangible',
+              onTap: onMakeTangible,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CueChip extends StatelessWidget {
+
+  const _CueChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: ActionChip(
+        avatar: Icon(icon, size: 18, color: AppColors.primary),
+        label: Text(label),
+        onPressed: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        backgroundColor: AppColors.primary.withOpacity(0.08),
+        side: BorderSide.none,
+      ),
+    );
+  }
+}
+
+class _ArtefactPickerSheet extends StatelessWidget {
+
+  const _ArtefactPickerSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'What should we make?',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Pick the artefact format that would be most useful right now.',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: ArtefactType.values.where((t) => t != ArtefactType.rawNotes).map((type) {
+                return ActionChip(
+                  avatar: Icon(type.icon, size: 18, color: AppColors.primary),
+                  label: Text(type.label),
+                  onPressed: () => Navigator.of(context).pop(type),
+                  backgroundColor: AppColors.primary.withOpacity(0.08),
+                  side: BorderSide.none,
+                );
+              }).toList(),
             ),
           ],
         ),

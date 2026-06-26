@@ -44,17 +44,17 @@ enum BrainstormCategory {
     description: 'Habits, root causes, and actionable routines.',
   );
 
-  final String id;
-  final String label;
-  final IconData icon;
-  final String description;
-
   const BrainstormCategory({
     required this.id,
     required this.label,
     required this.icon,
     required this.description,
   });
+
+  final String id;
+  final String label;
+  final IconData icon;
+  final String description;
 
   static BrainstormCategory fromId(String id) {
     return values.firstWhere(

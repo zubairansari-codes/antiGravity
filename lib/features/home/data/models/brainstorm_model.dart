@@ -10,14 +10,10 @@ import '../../domain/entities/brainstorm.dart';
 import '../../domain/entities/brainstorm_category.dart';
 import '../../domain/entities/brainstorm_result.dart';
 import '../../domain/entities/chat_message.dart';
+import '../../domain/entities/conversation_artefact.dart';
+import '../../domain/entities/artefact_type.dart';
 
 class BrainstormModel {
-  final String id;
-  final String title;
-  final String categoryId;
-  final List<Map<String, dynamic>> messagesJson;
-  final Map<String, dynamic>? resultJson;
-  final DateTime createdAt;
 
   const BrainstormModel({
     required this.id,
@@ -25,6 +21,7 @@ class BrainstormModel {
     required this.categoryId,
     required this.messagesJson,
     this.resultJson,
+    this.artefactsJson,
     required this.createdAt,
   });
 
@@ -56,8 +53,46 @@ class BrainstormModel {
                 'riskiestAssumption': b.result!.riskiestAssumption,
               }
             : null,
+        artefactsJson: b.artefacts.isNotEmpty
+            ? b.artefacts
+                .map((a) => {
+                      'artefactType': a.artefactType.id,
+                      'title': a.title,
+                      'content': a.content,
+                      'followUpQuestions': a.followUpQuestions,
+                    })
+                .toList()
+            : null,
         createdAt: b.createdAt,
       );
+
+  /// Restore from a Hive Map.
+  factory BrainstormModel.fromMap(Map<dynamic, dynamic> map) {
+    return BrainstormModel(
+      id: map['id'] as String,
+      title: map['title'] as String,
+      categoryId: map['categoryId'] as String? ?? 'general',
+      messagesJson: (map['messages'] as List)
+          .map((m) => Map<String, dynamic>.from(m as Map))
+          .toList(),
+      resultJson: map['result'] != null
+          ? Map<String, dynamic>.from(map['result'] as Map)
+          : null,
+      artefactsJson: map['artefacts'] != null
+          ? (map['artefacts'] as List)
+              .map((a) => Map<String, dynamic>.from(a as Map))
+              .toList()
+          : null,
+      createdAt: DateTime.parse(map['createdAt'] as String),
+    );
+  }
+  final String id;
+  final String title;
+  final String categoryId;
+  final List<Map<String, dynamic>> messagesJson;
+  final Map<String, dynamic>? resultJson;
+  final List<Map<String, dynamic>>? artefactsJson;
+  final DateTime createdAt;
 
   /// From storage → domain entity.
   Brainstorm toEntity() => Brainstorm(
@@ -75,6 +110,9 @@ class BrainstormModel {
                 ))
             .toList(),
         result: resultJson != null ? _parseResult(resultJson!) : null,
+        artefacts: artefactsJson != null
+            ? artefactsJson!.map(_parseArtefact).toList()
+            : const [],
         createdAt: createdAt,
       );
 
@@ -85,24 +123,9 @@ class BrainstormModel {
         'categoryId': categoryId,
         'messages': messagesJson,
         'result': resultJson,
+        'artefacts': artefactsJson,
         'createdAt': createdAt.toIso8601String(),
       };
-
-  /// Restore from a Hive Map.
-  factory BrainstormModel.fromMap(Map<dynamic, dynamic> map) {
-    return BrainstormModel(
-      id: map['id'] as String,
-      title: map['title'] as String,
-      categoryId: map['categoryId'] as String? ?? 'general',
-      messagesJson: (map['messages'] as List)
-          .map((m) => Map<String, dynamic>.from(m as Map))
-          .toList(),
-      resultJson: map['result'] != null
-          ? Map<String, dynamic>.from(map['result'] as Map)
-          : null,
-      createdAt: DateTime.parse(map['createdAt'] as String),
-    );
-  }
 
   static BrainstormResult _parseResult(Map<String, dynamic> json) {
     return BrainstormResult(
@@ -121,6 +144,18 @@ class BrainstormModel {
               .toList() ??
           [],
       riskiestAssumption: json['riskiestAssumption'] as String? ?? '',
+    );
+  }
+
+  static ConversationArtefact _parseArtefact(Map<String, dynamic> json) {
+    return ConversationArtefact(
+      artefactType: ArtefactType.fromId(json['artefactType'] as String? ?? 'rawNotes'),
+      title: json['title'] as String? ?? '',
+      content: json['content'] as String? ?? '',
+      followUpQuestions: (json['followUpQuestions'] as List?)
+              ?.map((q) => q as String)
+              .toList() ??
+          const [],
     );
   }
 }

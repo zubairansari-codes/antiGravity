@@ -1,5 +1,6 @@
-/// Home screen view model — manages the brainstorm history list.
+/// Home screen view model — manages the brainstorm history list with rename support.
 library;
+
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -40,6 +41,32 @@ class HomeViewModel extends AsyncNotifier<List<Brainstorm>> {
     result.fold(
       (failure) => state = AsyncError(failure, StackTrace.current),
       (_) async => await refresh(),
+    );
+  }
+
+  /// Rename a brainstorm by ID and refresh the list.
+  Future<void> renameBrainstorm(String id, String newTitle) async {
+    final repo = ref.read(brainstormRepositoryProvider);
+    final history = await repo.getBrainstormHistory();
+    history.fold(
+      (failure) => state = AsyncError(failure, StackTrace.current),
+      (sessions) async {
+        final session = sessions.firstWhere(
+          (s) => s.id == id,
+          orElse: () => Brainstorm(
+            id: id,
+            title: 'Unknown',
+            messages: const [],
+            createdAt: DateTime.now(),
+          ),
+        );
+        final updated = session.copyWith(title: newTitle);
+        final saveResult = await repo.saveBrainstorm(updated);
+        saveResult.fold(
+          (failure) => state = AsyncError(failure, StackTrace.current),
+          (_) async => await refresh(),
+        );
+      },
     );
   }
 }

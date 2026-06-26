@@ -4,18 +4,11 @@ library;
 import '../../domain/entities/chat_message.dart';
 
 class MessageModel {
-  final String role;
-  final String content;
 
   const MessageModel({
     required this.role,
     required this.content,
   });
-
-  Map<String, dynamic> toJson() => {
-        'role': role,
-        'content': content,
-      };
 
   factory MessageModel.fromJson(Map<String, dynamic> json) => MessageModel(
         role: json['role'] as String,
@@ -26,6 +19,13 @@ class MessageModel {
         role: msg.role == MessageRole.user ? 'user' : 'assistant',
         content: msg.content,
       );
+  final String role;
+  final String content;
+
+  Map<String, dynamic> toJson() => {
+        'role': role,
+        'content': content,
+      };
 
   ChatMessage toEntity() => ChatMessage(
         id: DateTime.now().microsecondsSinceEpoch.toString(),

@@ -1,13 +1,11 @@
-/// Reusable loading spinner.
-library;
-
+// Reusable loading spinner.
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 
 class LoadingSpinner extends StatelessWidget {
-  final String? message;
   const LoadingSpinner({super.key, this.message});
+  final String? message;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +26,7 @@ class LoadingSpinner extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               message!,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.onSurfaceVariant,
                 fontSize: 14,
               ),

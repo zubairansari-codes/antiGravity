@@ -1,9 +1,9 @@
-/// App-wide constants — API config, timeouts, free-tier limits.
-///
-/// API keys are loaded from `.env` at runtime via flutter_dotenv.
-/// Nothing secret lives here.
-library;
+import 'voice_personas.dart';
 
+// App-wide constants — API config, timeouts, free-tier limits.
+//
+// API keys are injected at build time via --dart-define.
+// Nothing secret lives here.
 abstract final class AppConstants {
   /// Groq API base URL (OpenAI-compatible).
   static const String apiBaseUrl = 'https://api.groq.com/openai/v1';
@@ -15,17 +15,31 @@ abstract final class AppConstants {
   /// Free-tier limits.
   static const int freeBrainstormsPerDay = 3;
 
+  /// Whether the freemium cap is disabled for development builds.
+  static const bool kDebugDisableFreemium = bool.fromEnvironment(
+    'DEBUG_FREEMIUM',
+    defaultValue: false,
+  );
+
   /// Conversation limits — auto-wrap after this many exchanges.
   static const int maxExchangesBeforeWrap = 10;
 
-  /// Groq model selection — Llama 3.3 70B for quality, 8B for speed.
-  static const String conversationModel = 'llama-3.3-70b-versatile';
+  /// Groq model selection — dual-model routing.
+  /// Fast/cheap model for conversation turns.
+  static const String conversationModel = 'llama-3.1-8b-instant';
+  /// High-quality model for final output generation.
   static const String finalOutputModel = 'llama-3.3-70b-versatile';
 
   /// ElevenLabs TTS config.
   static const String elevenLabsBaseUrl = 'https://api.elevenlabs.io/v1';
-  static const String elevenLabsVoiceId = 'TxGEqnHWrfWFTfGW9XjX'; // "Josh"
+  static const String elevenLabsVoiceId = '21m00Tcm4TlvDq8ikWAM'; // "Rachel"
   static const String elevenLabsModelId = 'eleven_turbo_v2_5';
+
+  /// Default TTS voice persona.
+  static const VoicePersona defaultVoicePersona = VoicePersonas.rachel;
+
+  /// Available silence-timeout presets for voice input (in milliseconds).
+  static const List<int> silenceTimeoutPresets = [500, 1000, 2000, 4000];
 
   /// Hive box names.
   static const String brainstormBoxName = 'brainstorms';

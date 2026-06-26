@@ -1,0 +1,38 @@
+/// Data source interface for remote Groq API calls.
+///
+/// Allows mocking in tests and decouples the repository
+/// from concrete Dio implementations.
+library;
+
+import '../../domain/entities/artefact_type.dart';
+import '../../domain/entities/brainstorm_category.dart';
+import '../../domain/entities/conversation_artefact.dart';
+import '../../domain/entities/conversation_mode.dart';
+import '../models/ai_response_model.dart';
+import '../models/message_model.dart';
+
+abstract class IBrainstormRemoteDataSource {
+  /// Send conversation history to Groq and get a response.
+  ///
+  /// When [requestFinal] is true, uses the final output system prompt.
+  /// Otherwise uses the conversational system prompt.
+  /// Runs validation, moderation, PII redaction, and rate limiting.
+  Future<AIResponseModel> sendMessage(
+    List<MessageModel> messages, {
+    required bool requestFinal,
+    required BrainstormCategory category,
+    ConversationMode mode = ConversationMode.riff,
+    ArtefactType? requestedArtefact,
+    List<ConversationArtefact> previousArtefacts = const [],
+    String? contextSummary,
+  });
+
+  /// Raw API call bypassing validation, moderation, and rate limits.
+  ///
+  /// Use only for internal operations like conversation summarisation.
+  Future<AIResponseModel> sendRaw(
+    List<MessageModel> messages, {
+    required bool requestFinal,
+    required BrainstormCategory category,
+  });
+}

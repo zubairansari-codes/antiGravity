@@ -1,10 +1,8 @@
-/// Voice wave animation — visual feedback during listening/speaking.
-///
-/// Shows 5 animated bars that pulse in a staggered wave pattern.
-/// Active colour changes based on whether the app is listening
-/// (primary purple) or speaking (amber accent).
-library;
-
+// Voice wave animation — visual feedback during listening/speaking.
+//
+// Shows 5 animated bars that pulse in a staggered wave pattern.
+// Active colour changes based on whether the app is listening
+// (primary purple) or speaking (amber accent).
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -12,14 +10,14 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 
 class VoiceWaveAnimation extends StatefulWidget {
-  final bool isActive;
-  final bool isSpeaking;
 
   const VoiceWaveAnimation({
     super.key,
     required this.isActive,
     required this.isSpeaking,
   });
+  final bool isActive;
+  final bool isSpeaking;
 
   @override
   State<VoiceWaveAnimation> createState() => _VoiceWaveAnimationState();
