@@ -25,6 +25,10 @@ import 'prompt_factory.dart';
 const String _conversationModel = 'llama-3.1-8b-instant';
 const String _finalOutputModel = 'llama-3.3-70b-versatile';
 
+const String _caringResponse = '''
+It sounds like things feel heavy right now. I'm here to riff with you, and I also want to gently note that talking with a mental health professional or someone you trust can make a real difference. If you're in crisis, reach out to your local emergency number or a crisis line. Whenever you're ready, we can keep creating together — or switch topics whenever you like.
+''';
+
 class BrainstormRemoteDataSource implements IBrainstormRemoteDataSource {
 
   BrainstormRemoteDataSource(this._dio);
@@ -108,6 +112,16 @@ class BrainstormRemoteDataSource implements IBrainstormRemoteDataSource {
       throw ValidationException(moderation.reason);
     }
 
+    // For mental-health warnings, respond with a caring improvisational message
+    // without calling the API or exposing the user's raw input further.
+    if (moderation.shouldWarn) {
+      return const AIResponseModel(
+        text: _caringResponse,
+        isFinal: false,
+        isWarning: true,
+      );
+    }
+
     // PII redaction
     final redaction = PiiFilter.redact(lastUserMessage.content);
     final sanitizedMessages = redaction.wasRedacted
@@ -121,6 +135,8 @@ class BrainstormRemoteDataSource implements IBrainstormRemoteDataSource {
             return m;
           }).toList()
         : messages;
+
+    _lastRequestTime = DateTime.now();
 
     final model = requestFinal ? _finalOutputModel : _conversationModel;
 
@@ -156,14 +172,50 @@ class BrainstormRemoteDataSource implements IBrainstormRemoteDataSource {
             'max_tokens': 500,
           };
 
-    _lastRequestTime = DateTime.now();
-
     final response = await _dio.post(
       '/chat/completions',
       data: requestData,
     );
 
     // Extract response text (OpenAI format).
+    final choices = response.data['choices'] as List;
+    final content = choices[0]['message']['content'] as String;
+
+    return AIResponseModel.fromContent(
+      content,
+      isFinal: requestFinal,
+      category: category,
+    );
+  }
+
+  @override
+  Future<AIResponseModel> sendRaw(
+    List<MessageModel> messages, {
+    required bool requestFinal,
+    required BrainstormCategory category,
+  }) async {
+    final model = requestFinal ? _finalOutputModel : _conversationModel;
+
+    final requestData = requestFinal
+        ? {
+            'model': model,
+            'messages': messages.map((m) => m.toJson()).toList(),
+            'temperature': 0.5,
+            'max_tokens': 2000,
+            'response_format': {'type': 'json_object'},
+          }
+        : {
+            'model': model,
+            'messages': messages.map((m) => m.toJson()).toList(),
+            'temperature': 0.5,
+            'max_tokens': 500,
+          };
+
+    final response = await _dio.post(
+      '/chat/completions',
+      data: requestData,
+    );
+
     final choices = response.data['choices'] as List;
     final content = choices[0]['message']['content'] as String;
 

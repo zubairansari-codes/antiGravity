@@ -24,8 +24,14 @@ class ConversationContextManager {
   /// If the conversation is short, returns it verbatim.
   /// If long, summarizes older turns and appends recent ones.
   Future<List<MessageModel>> buildMessages(List<MessageModel> allMessages) async {
+    final context = await buildContext(allMessages);
+    return context.messages;
+  }
+
+  /// Build optimized messages and, if summarisation happened, the summary text.
+  Future<ContextBuildResult> buildContext(List<MessageModel> allMessages) async {
     if (allMessages.length <= _maxVerbatimTurns) {
-      return allMessages;
+      return ContextBuildResult(allMessages, null);
     }
 
     final olderMessages = allMessages.sublist(0, allMessages.length - _maxVerbatimTurns);
@@ -33,13 +39,16 @@ class ConversationContextManager {
 
     final summary = await _summarize(olderMessages);
 
-    return [
-      MessageModel(
-        role: 'system',
-        content: 'Summary of earlier conversation: $summary',
-      ),
-      ...recentMessages,
-    ];
+    return ContextBuildResult(
+      [
+        MessageModel(
+          role: 'system',
+          content: 'Summary of earlier conversation: $summary',
+        ),
+        ...recentMessages,
+      ],
+      summary,
+    );
   }
 
   /// Whether the conversation has grown long enough to need summarization.
@@ -54,7 +63,7 @@ class ConversationContextManager {
         'open questions. Do not include pleasantries or filler.';
 
     try {
-      final response = await _remote.sendMessage(
+      final response = await _remote.sendRaw(
         [
           const MessageModel(role: 'system', content: summarySystemPrompt),
           ...messages,
@@ -87,4 +96,16 @@ class ConversationContextManager {
       ..sort((a, b) => b.value.compareTo(a.value));
     return sorted.take(5).map((e) => e.key).join(', ');
   }
+}
+
+/// Result of building a context window.
+class ContextBuildResult {
+
+  const ContextBuildResult(this.messages, this.summary);
+
+  /// The messages to send to the API (may include a system summary).
+  final List<MessageModel> messages;
+
+  /// A plain-text summary of the older turns, or `null` if no summarisation ran.
+  final String? summary;
 }

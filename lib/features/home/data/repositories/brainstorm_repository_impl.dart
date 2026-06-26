@@ -22,15 +22,21 @@ import '../../domain/repositories/brainstorm_repository.dart';
 import '../datasources/brainstorm_local_ds_interface.dart';
 import '../datasources/brainstorm_remote_ds_interface.dart';
 import '../datasources/brainstorm_remote_ds.dart';
+import '../datasources/conversation_context_manager.dart';
 import '../models/ai_response_model.dart';
 import '../models/brainstorm_model.dart';
 import '../models/message_model.dart';
 
 class BrainstormRepositoryImpl implements BrainstormRepository {
 
-  const BrainstormRepositoryImpl(this._remote, this._local);
+  const BrainstormRepositoryImpl(
+    this._remote,
+    this._local, [
+    this._contextManager,
+  ]);
   final IBrainstormRemoteDataSource _remote;
   final IBrainstormLocalDataSource _local;
+  final ConversationContextManager? _contextManager;
 
   @override
   Future<Either<Failure, AIResponse>> sendMessage(
@@ -42,18 +48,24 @@ class BrainstormRepositoryImpl implements BrainstormRepository {
     List<ConversationArtefact> previousArtefacts = const [],
     String? contextSummary,
   }) async {
+    ContextBuildResult? context;
     try {
       final messageModels = messages.map(MessageModel.fromEntity).toList();
+      context = await _contextManager?.buildContext(messageModels)
+          ?? ContextBuildResult(messageModels, null);
+
       final response = await _sendWithRetry(
-        messageModels,
+        context.messages,
         requestFinal: requestFinalOutput,
         category: category,
         mode: mode,
         requestedArtefact: requestedArtefact,
         previousArtefacts: previousArtefacts,
-        contextSummary: contextSummary,
+        contextSummary: context.summary,
       );
-      return Right(response.toEntity());
+      return Right(
+        response.toEntity().copyWith(contextSummary: context.summary),
+      );
     } on ValidationException catch (e) {
       return Left(ValidationFailure(e.message));
     } on DioException catch (e) {
@@ -88,10 +100,11 @@ class BrainstormRepositoryImpl implements BrainstormRepository {
       // JSON parsing failed — try once with a corrective prompt
       debugPrint('[AG-REPO] ParseException: $e');
       try {
-        final messageModels = messages.map(MessageModel.fromEntity).toList();
+        final baseMessages = context?.messages
+            ?? messages.map(MessageModel.fromEntity).toList();
         final correctiveResponse = await _sendWithRetry(
           [
-            ...messageModels,
+            ...baseMessages,
             const MessageModel(
               role: 'system',
               content: 'Your previous response was not valid JSON. Please output ONLY a valid JSON object matching the schema. No markdown, no explanation, just raw JSON.',
@@ -102,9 +115,13 @@ class BrainstormRepositoryImpl implements BrainstormRepository {
           mode: mode,
           requestedArtefact: requestedArtefact,
           previousArtefacts: previousArtefacts,
-          contextSummary: contextSummary,
+          contextSummary: context?.summary ?? contextSummary,
         );
-        return Right(correctiveResponse.toEntity());
+        return Right(
+          correctiveResponse.toEntity().copyWith(
+            contextSummary: context?.summary,
+          ),
+        );
       } catch (e) {
         debugPrint('[AG-REPO] Corrective retry also failed: $e');
         // Return raw text with a flag that the VM can use to show "Try Again"

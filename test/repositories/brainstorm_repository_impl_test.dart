@@ -1,8 +1,10 @@
 import 'package:antigravity/core/errors/failures.dart';
 import 'package:antigravity/features/home/data/datasources/brainstorm_local_ds_interface.dart';
 import 'package:antigravity/features/home/data/datasources/brainstorm_remote_ds_interface.dart';
+import 'package:antigravity/features/home/data/datasources/conversation_context_manager.dart';
 import 'package:antigravity/features/home/data/models/ai_response_model.dart';
 import 'package:antigravity/features/home/data/models/brainstorm_model.dart';
+import 'package:antigravity/features/home/data/models/message_model.dart';
 import 'package:antigravity/features/home/data/repositories/brainstorm_repository_impl.dart';
 import 'package:antigravity/features/home/domain/entities/brainstorm.dart';
 import 'package:antigravity/features/home/domain/entities/brainstorm_category.dart';
@@ -308,6 +310,53 @@ void main() {
       final entity = result.getOrElse((_) => throw Exception('Expected Right'));
       expect(entity.text, contains('Try Again'));
       expect(entity.structuredResult, isNull);
+    });
+
+    test('propagates context summary from ConversationContextManager', () async {
+      final longMessages = [
+        for (var i = 0; i < 16; i++)
+          i % 2 == 0
+              ? ChatMessage.user('Message $i')
+              : ChatMessage.assistant('Response $i'),
+      ];
+
+      when(() => mockRemote.sendRaw(any(), requestFinal: any(named: 'requestFinal'), category: any(named: 'category')))
+          .thenAnswer((_) async => const AIResponseModel(
+                text: 'Summary of older conversation.',
+                isFinal: false,
+              ));
+
+      when(() => mockRemote.sendMessage(
+            any(),
+            requestFinal: any(named: 'requestFinal'),
+            category: any(named: 'category'),
+            contextSummary: any(named: 'contextSummary'),
+          )).thenAnswer((_) async => testResponse);
+
+      final manager = ConversationContextManager(mockRemote);
+      final repoWithManager = BrainstormRepositoryImpl(
+        mockRemote,
+        mockLocal,
+        manager,
+      );
+
+      final result = await repoWithManager.sendMessage(
+        longMessages,
+        requestFinalOutput: true,
+        category: BrainstormCategory.general,
+      );
+
+      expect(result.isRight(), true);
+      final entity = result.getOrElse((_) => throw Exception('Expected Right'));
+      expect(entity.contextSummary, 'Summary of older conversation.');
+
+      final captured = verify(() => mockRemote.sendMessage(
+            any(),
+            requestFinal: any(named: 'requestFinal'),
+            category: any(named: 'category'),
+            contextSummary: captureAny(named: 'contextSummary'),
+          )).captured;
+      expect(captured.last, 'Summary of older conversation.');
     });
   });
 

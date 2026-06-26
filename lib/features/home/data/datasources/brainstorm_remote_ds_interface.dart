@@ -16,6 +16,7 @@ abstract class IBrainstormRemoteDataSource {
   ///
   /// When [requestFinal] is true, uses the final output system prompt.
   /// Otherwise uses the conversational system prompt.
+  /// Runs validation, moderation, PII redaction, and rate limiting.
   Future<AIResponseModel> sendMessage(
     List<MessageModel> messages, {
     required bool requestFinal,
@@ -24,5 +25,14 @@ abstract class IBrainstormRemoteDataSource {
     ArtefactType? requestedArtefact,
     List<ConversationArtefact> previousArtefacts = const [],
     String? contextSummary,
+  });
+
+  /// Raw API call bypassing validation, moderation, and rate limits.
+  ///
+  /// Use only for internal operations like conversation summarisation.
+  Future<AIResponseModel> sendRaw(
+    List<MessageModel> messages, {
+    required bool requestFinal,
+    required BrainstormCategory category,
   });
 }

@@ -30,6 +30,8 @@ class AIResponseModel {
     required this.isFinal,
     this.structuredResult,
     this.artefacts = const [],
+    this.isWarning = false,
+    this.contextSummary,
   });
 
   /// Parse raw AI content into a model.
@@ -64,6 +66,8 @@ class AIResponseModel {
   final bool isFinal;
   final BrainstormResult? structuredResult;
   final List<ConversationArtefact> artefacts;
+  final bool isWarning;
+  final String? contextSummary;
 
   /// Convert to domain entity.
   AIResponse toEntity() => AIResponse(
@@ -71,6 +75,8 @@ class AIResponseModel {
         isFinal: isFinal,
         structuredResult: structuredResult,
         artefacts: artefacts,
+        isWarning: isWarning,
+        contextSummary: contextSummary,
       );
 
   // ── Parsing entry point ─────────────────────────────────
