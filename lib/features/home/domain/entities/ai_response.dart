@@ -7,6 +7,12 @@ library;
 import 'brainstorm_result.dart';
 
 class AIResponse {
+
+  const AIResponse({
+    required this.text,
+    required this.isFinal,
+    this.structuredResult,
+  });
   /// The raw text content from the AI.
   final String text;
 
@@ -15,12 +21,6 @@ class AIResponse {
 
   /// Parsed result — only present when [isFinal] is true.
   final BrainstormResult? structuredResult;
-
-  const AIResponse({
-    required this.text,
-    required this.isFinal,
-    this.structuredResult,
-  });
 
   @override
   String toString() => 'AIResponse(isFinal: $isFinal, len: ${text.length})';

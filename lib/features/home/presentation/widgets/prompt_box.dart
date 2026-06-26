@@ -1,6 +1,7 @@
 /// Prompt box — highlighted section with copy button on the result screen.
 library;
 
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -8,9 +9,9 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 
 class PromptBox extends StatelessWidget {
-  final String prompt;
 
   const PromptBox({super.key, required this.prompt});
+  final String prompt;
 
   @override
   Widget build(BuildContext context) {
@@ -36,14 +37,14 @@ class PromptBox extends StatelessWidget {
                   color: AppColors.primary.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.auto_awesome,
                   color: AppColors.primary,
                   size: 18,
                 ),
               ),
               const SizedBox(width: 10),
-              Text(
+              const Text(
                 'Ready-to-Use Prompt',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
@@ -70,8 +71,8 @@ class PromptBox extends StatelessWidget {
 }
 
 class _CopyButton extends StatefulWidget {
-  final String text;
   const _CopyButton({required this.text});
+  final String text;
 
   @override
   State<_CopyButton> createState() => _CopyButtonState();

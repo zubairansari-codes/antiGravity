@@ -1,15 +1,13 @@
 /// Voice control bar — bottom bar with mic button, text input fallback, and haptics.
 library;
 
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/theme/app_colors.dart';
 
 class VoiceControlBar extends StatefulWidget {
-  final bool isListening;
-  final VoidCallback onMicTap;
-  final ValueChanged<String>? onTextSubmit;
 
   const VoiceControlBar({
     super.key,
@@ -17,6 +15,9 @@ class VoiceControlBar extends StatefulWidget {
     required this.onMicTap,
     this.onTextSubmit,
   });
+  final bool isListening;
+  final VoidCallback onMicTap;
+  final ValueChanged<String>? onTextSubmit;
 
   @override
   State<VoiceControlBar> createState() => _VoiceControlBarState();

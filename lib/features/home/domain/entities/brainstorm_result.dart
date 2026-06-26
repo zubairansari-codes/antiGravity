@@ -6,11 +6,6 @@
 library;
 
 class BrainstormResult {
-  final String refinedIdea;
-  final String readyPrompt;
-  final List<ActionStep> actionPlan;
-  final List<String> alternatives;
-  final String riskiestAssumption;
 
   const BrainstormResult({
     required this.refinedIdea,
@@ -19,6 +14,11 @@ class BrainstormResult {
     required this.alternatives,
     required this.riskiestAssumption,
   });
+  final String refinedIdea;
+  final String readyPrompt;
+  final List<ActionStep> actionPlan;
+  final List<String> alternatives;
+  final String riskiestAssumption;
 
   @override
   String toString() => 'BrainstormResult(idea: ${refinedIdea.length > 30 ? '${refinedIdea.substring(0, 30)}…' : refinedIdea})';
@@ -26,15 +26,15 @@ class BrainstormResult {
 
 /// A single step in the 3-step action plan.
 class ActionStep {
-  final int stepNumber;
-  final String title;
-  final String description;
 
   const ActionStep({
     required this.stepNumber,
     required this.title,
     required this.description,
   });
+  final int stepNumber;
+  final String title;
+  final String description;
 
   @override
   String toString() => 'ActionStep($stepNumber: $title)';

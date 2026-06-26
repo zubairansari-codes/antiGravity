@@ -9,12 +9,6 @@ import 'brainstorm_result.dart';
 import 'chat_message.dart';
 
 class Brainstorm {
-  final String id;
-  final String title;
-  final BrainstormCategory category;
-  final List<ChatMessage> messages;
-  final BrainstormResult? result;
-  final DateTime createdAt;
 
   const Brainstorm({
     required this.id,
@@ -24,6 +18,12 @@ class Brainstorm {
     this.result,
     required this.createdAt,
   });
+  final String id;
+  final String title;
+  final BrainstormCategory category;
+  final List<ChatMessage> messages;
+  final BrainstormResult? result;
+  final DateTime createdAt;
 
   /// Create a copy with updated fields.
   Brainstorm copyWith({

@@ -13,6 +13,12 @@ abstract final class AppConstants {
   /// Free-tier limits.
   static const int freeBrainstormsPerDay = 3;
 
+  /// Whether the freemium cap is disabled for development builds.
+  static const bool kDebugDisableFreemium = bool.fromEnvironment(
+    'DEBUG_FREEMIUM',
+    defaultValue: false,
+  );
+
   /// Conversation limits — auto-wrap after this many exchanges.
   static const int maxExchangesBeforeWrap = 10;
 
@@ -24,7 +30,7 @@ abstract final class AppConstants {
 
   /// ElevenLabs TTS config.
   static const String elevenLabsBaseUrl = 'https://api.elevenlabs.io/v1';
-  static const String elevenLabsVoiceId = 'TxGEqnHWrfWFTfGW9XjX'; // "Josh"
+  static const String elevenLabsVoiceId = '21m00Tcm4TlvDq8ikWAM'; // "Rachel"
   static const String elevenLabsModelId = 'eleven_turbo_v2_5';
 
   /// Hive box names.

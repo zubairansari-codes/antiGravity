@@ -4,6 +4,7 @@
 /// barge-in support, accessibility labels, and paywall modal.
 library;
 
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -12,24 +13,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/animations/typing_indicator.dart';
 import '../../../../core/widgets/animations/voice_wave.dart';
 import '../../domain/entities/brainstorm_category.dart';
 import '../../domain/entities/chat_message.dart';
 import '../providers/brainstorm_session_vm.dart';
-import '../providers/settings_providers.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/voice_control_bar.dart';
 
 class BrainstormScreen extends ConsumerStatefulWidget {
-  final BrainstormCategory category;
 
   const BrainstormScreen({
     super.key,
     this.category = BrainstormCategory.general,
   });
+  final BrainstormCategory category;
 
   @override
   ConsumerState<BrainstormScreen> createState() => _BrainstormScreenState();
@@ -194,11 +193,11 @@ class _BrainstormScreenState extends ConsumerState<BrainstormScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   color: AppColors.accent.withOpacity(0.1),
-                  child: Row(
+                  child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.touch_app, size: 16, color: AppColors.accent),
-                      const SizedBox(width: 6),
+                      SizedBox(width: 6),
                       Text(
                         'Tap to interrupt',
                         style: TextStyle(
@@ -258,7 +257,7 @@ class _BrainstormScreenState extends ConsumerState<BrainstormScreen> {
                   ),
                   child: Text(
                     state.liveTranscript!,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.primary,
                       fontSize: 15,
                       fontStyle: FontStyle.italic,
@@ -306,7 +305,7 @@ class _BrainstormScreenState extends ConsumerState<BrainstormScreen> {
                 color: AppColors.error.withOpacity(0.1),
                 child: Text(
                   state.error!,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppColors.error,
                     fontSize: 13,
                   ),
@@ -367,25 +366,25 @@ class _PaywallSheet extends ConsumerWidget {
                   color: AppColors.accent.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.lock_outline,
                   color: AppColors.accent,
                   size: 28,
                 ),
               ),
               const SizedBox(width: 16),
-              Expanded(
+              const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       "You've used your 3 free brainstorms today!",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       'Upgrade to AntiGravity Pro for unlimited brainstorming.',
                       style: TextStyle(
@@ -462,10 +461,10 @@ class _PaywallSheet extends ConsumerWidget {
 }
 
 class _FeatureCheck extends StatelessWidget {
-  final IconData icon;
-  final String text;
 
   const _FeatureCheck({required this.icon, required this.text});
+  final IconData icon;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -473,7 +472,7 @@ class _FeatureCheck extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
-          Icon(Icons.check_circle, size: 20, color: AppColors.success),
+          const Icon(Icons.check_circle, size: 20, color: AppColors.success),
           const SizedBox(width: 12),
           Text(
             text,
@@ -502,7 +501,7 @@ class _WelcomePrompt extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'What\'s on your mind?',
               style: TextStyle(
                 fontSize: 20,
@@ -511,7 +510,7 @@ class _WelcomePrompt extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'Tap the mic and tell me your idea.\nI\'ll challenge it, sharpen it, and\ngive you a plan.',
               textAlign: TextAlign.center,
               style: TextStyle(

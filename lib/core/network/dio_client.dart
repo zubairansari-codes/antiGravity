@@ -8,6 +8,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../constants/app_constants.dart';
+import 'dio_certificate_pinning.dart';
 
 /// Retry interceptor with exponential backoff.
 class RetryInterceptor extends Interceptor {
@@ -109,18 +110,7 @@ class DioClient {
     // Certificate pinning for known API hosts.
     // TODO: Replace with SHA256 public-key hash pinning for production.
     if (!kIsWeb) {
-      // ignore: avoid_dynamic_calls
-      (_dio.httpClientAdapter as dynamic).onHttpClientCreate = (client) {
-        // ignore: avoid_dynamic_calls
-        client.badCertificateCallback = (cert, host, port) {
-          final trustedHosts = [
-            'api.groq.com',
-            'api.elevenlabs.io',
-          ];
-          return trustedHosts.contains(host);
-        };
-        return client;
-      };
+      configureCertificatePinning(_dio);
     }
   }
 

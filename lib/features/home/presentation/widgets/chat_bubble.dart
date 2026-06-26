@@ -1,20 +1,21 @@
 /// Chat bubble — a single message in the brainstorming conversation with accessibility.
 library;
 
+
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/chat_message.dart';
 
 class ChatBubble extends StatelessWidget {
-  final ChatMessage message;
-  final bool isUser;
 
   const ChatBubble({
     super.key,
     required this.message,
     required this.isUser,
   });
+  final ChatMessage message;
+  final bool isUser;
 
   @override
   Widget build(BuildContext context) {

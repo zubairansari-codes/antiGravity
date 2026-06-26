@@ -1,6 +1,7 @@
 /// App-wide preference providers — theme, TTS speed, haptics, onboarding.
 library;
 
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
@@ -18,12 +19,12 @@ final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>(
 );
 
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
-  static const String _boxName = 'settings_theme';
-  static const String _key = 'themeMode';
 
   ThemeModeNotifier() : super(ThemeMode.system) {
     _load();
   }
+  static const String _boxName = 'settings_theme';
+  static const String _key = 'themeMode';
 
   Future<void> _load() async {
     final box = await Hive.openBox<String>(_boxName);
@@ -50,12 +51,12 @@ final ttsSpeedProvider = StateNotifierProvider<TtsSpeedNotifier, double>(
 );
 
 class TtsSpeedNotifier extends StateNotifier<double> {
-  static const String _boxName = 'settings_tts';
-  static const String _key = 'ttsSpeed';
 
   TtsSpeedNotifier() : super(1.0) {
     _load();
   }
+  static const String _boxName = 'settings_tts';
+  static const String _key = 'ttsSpeed';
 
   Future<void> _load() async {
     final box = await Hive.openBox<double>(_boxName);
@@ -79,12 +80,12 @@ final hapticsEnabledProvider = StateNotifierProvider<HapticsNotifier, bool>(
 );
 
 class HapticsNotifier extends StateNotifier<bool> {
-  static const String _boxName = 'settings_haptics';
-  static const String _key = 'hapticsEnabled';
 
   HapticsNotifier() : super(true) {
     _load();
   }
+  static const String _boxName = 'settings_haptics';
+  static const String _key = 'hapticsEnabled';
 
   Future<void> _load() async {
     final box = await Hive.openBox<bool>(_boxName);

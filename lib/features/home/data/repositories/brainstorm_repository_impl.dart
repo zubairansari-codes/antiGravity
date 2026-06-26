@@ -24,10 +24,10 @@ import '../models/brainstorm_model.dart';
 import '../models/message_model.dart';
 
 class BrainstormRepositoryImpl implements BrainstormRepository {
-  final IBrainstormRemoteDataSource _remote;
-  final IBrainstormLocalDataSource _local;
 
   const BrainstormRepositoryImpl(this._remote, this._local);
+  final IBrainstormRemoteDataSource _remote;
+  final IBrainstormLocalDataSource _local;
 
   @override
   Future<Either<Failure, AIResponse>> sendMessage(

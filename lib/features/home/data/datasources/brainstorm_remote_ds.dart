@@ -23,13 +23,13 @@ const String _conversationModel = 'llama-3.1-8b-instant';
 const String _finalOutputModel = 'llama-3.3-70b-versatile';
 
 class BrainstormRemoteDataSource implements IBrainstormRemoteDataSource {
+
+  BrainstormRemoteDataSource(this._dio);
   final Dio _dio;
 
   /// Rate-limiting: track last request timestamp.
   DateTime? _lastRequestTime;
   static const Duration _minRequestInterval = Duration(seconds: 3);
-
-  BrainstormRemoteDataSource(this._dio);
 
   /// Validate user input before sending to the API.
   ValidationError? validateInput(String message) {
@@ -166,14 +166,14 @@ class BrainstormRemoteDataSource implements IBrainstormRemoteDataSource {
 
 /// Simple validation error wrapper.
 class ValidationError {
-  final String message;
   const ValidationError(this.message);
+  final String message;
 }
 
 /// Custom exception for validation failures in the remote data source.
 class ValidationException implements Exception {
-  final String message;
   const ValidationException(this.message);
+  final String message;
 
   @override
   String toString() => 'ValidationException: $message';

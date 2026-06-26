@@ -1,14 +1,15 @@
 /// Result header — displays the refined idea title.
 library;
 
+
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 
 class ResultHeader extends StatelessWidget {
-  final String title;
 
   const ResultHeader({super.key, required this.title});
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -32,11 +33,11 @@ class ResultHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(Icons.lightbulb_rounded,
                   color: AppColors.accent, size: 22),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 'Your Refined Idea',
                 style: TextStyle(

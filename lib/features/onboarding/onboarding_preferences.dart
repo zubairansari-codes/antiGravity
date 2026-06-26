@@ -1,6 +1,7 @@
 /// Onboarding preferences — simple Hive-backed boolean for first-launch check.
 library;
 
+
 import 'package:hive/hive.dart';
 
 class OnboardingPreferences {

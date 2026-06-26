@@ -10,14 +10,14 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 
 class VoiceWaveAnimation extends StatefulWidget {
-  final bool isActive;
-  final bool isSpeaking;
 
   const VoiceWaveAnimation({
     super.key,
     required this.isActive,
     required this.isSpeaking,
   });
+  final bool isActive;
+  final bool isSpeaking;
 
   @override
   State<VoiceWaveAnimation> createState() => _VoiceWaveAnimationState();

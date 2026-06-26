@@ -7,9 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../home/presentation/providers/home_viewmodel.dart';
-import '../../home/presentation/providers/settings_providers.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../providers/home_viewmodel.dart';
+import '../providers/settings_providers.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -52,7 +52,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         padding: const EdgeInsets.symmetric(vertical: 16),
         children: [
           // ── Appearance ─────────────────────────────────────
-          _SectionHeader('Appearance'),
+          const _SectionHeader('Appearance'),
           _ThemeModeTile(
             value: themeMode,
             onChanged: (mode) =>
@@ -62,7 +62,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(height: 32),
 
           // ── Voice ──────────────────────────────────────────
-          _SectionHeader('Voice'),
+          const _SectionHeader('Voice'),
           _TtsSpeedTile(
             value: ttsSpeed,
             onChanged: (speed) =>
@@ -72,7 +72,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(height: 32),
 
           // ── Feedback ───────────────────────────────────────
-          _SectionHeader('Feedback'),
+          const _SectionHeader('Feedback'),
           SwitchListTile(
             title: const Text('Haptic Feedback'),
             subtitle: const Text('Vibrations on actions and AI responses'),
@@ -85,7 +85,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(height: 32),
 
           // ── Data ───────────────────────────────────────────
-          _SectionHeader('Data'),
+          const _SectionHeader('Data'),
           ListTile(
             leading: const Icon(Icons.delete_outline, color: AppColors.error),
             title: const Text(
@@ -99,7 +99,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const Divider(height: 32),
 
           // ── About ──────────────────────────────────────────
-          _SectionHeader('About'),
+          const _SectionHeader('About'),
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('Version'),
@@ -174,8 +174,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 }
 
 class _SectionHeader extends StatelessWidget {
-  final String title;
   const _SectionHeader(this.title);
+  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -183,7 +183,7 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Text(
         title.toUpperCase(),
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w800,
           color: AppColors.primary,
@@ -195,13 +195,13 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _ThemeModeTile extends StatelessWidget {
-  final ThemeMode value;
-  final ValueChanged<ThemeMode> onChanged;
 
   const _ThemeModeTile({
     required this.value,
     required this.onChanged,
   });
+  final ThemeMode value;
+  final ValueChanged<ThemeMode> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -243,13 +243,13 @@ class _ThemeModeTile extends StatelessWidget {
 }
 
 class _TtsSpeedTile extends StatelessWidget {
-  final double value;
-  final ValueChanged<double> onChanged;
 
   const _TtsSpeedTile({
     required this.value,
     required this.onChanged,
   });
+  final double value;
+  final ValueChanged<double> onChanged;
 
   @override
   Widget build(BuildContext context) {

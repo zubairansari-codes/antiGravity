@@ -81,13 +81,13 @@ class PiiFilter {
 
 /// Result of a PII redaction pass.
 class RedactionResult {
-  final String redactedText;
-  final Map<String, String> mapping;
-  final bool wasRedacted;
 
   const RedactionResult({
     required this.redactedText,
     required this.mapping,
     required this.wasRedacted,
   });
+  final String redactedText;
+  final Map<String, String> mapping;
+  final bool wasRedacted;
 }

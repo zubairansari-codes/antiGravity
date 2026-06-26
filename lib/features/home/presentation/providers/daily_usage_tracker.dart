@@ -1,6 +1,7 @@
 /// Daily usage tracker — tracks free-tier brainstorm usage per day.
 library;
 
+
 import 'package:hive/hive.dart';
 
 class DailyUsageTracker {

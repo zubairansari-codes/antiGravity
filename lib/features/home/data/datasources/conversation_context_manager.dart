@@ -9,9 +9,9 @@ import '../models/message_model.dart';
 import 'brainstorm_remote_ds_interface.dart';
 
 class ConversationContextManager {
-  final IBrainstormRemoteDataSource _remote;
 
   const ConversationContextManager(this._remote);
+  final IBrainstormRemoteDataSource _remote;
 
   /// Number of recent turns to keep verbatim (each turn = user + assistant).
   static const int _maxVerbatimTurns = 7;

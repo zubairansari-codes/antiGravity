@@ -1,15 +1,16 @@
 /// Action step card — a single step in the 3-step action plan.
 library;
 
+
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/brainstorm_result.dart';
 
 class ActionStepCard extends StatelessWidget {
-  final ActionStep step;
 
   const ActionStepCard({super.key, required this.step});
+  final ActionStep step;
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +72,7 @@ class ActionStepCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     step.description,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.onSurfaceVariant,
                       fontSize: 13,
                       height: 1.4,

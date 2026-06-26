@@ -1,14 +1,15 @@
 /// Risk card — displays the riskiest assumption on the result screen.
 library;
 
+
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 
 class RiskCard extends StatelessWidget {
-  final String text;
 
   const RiskCard({super.key, required this.text});
+  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -27,14 +28,14 @@ class RiskCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.warning_amber_rounded,
                 color: AppColors.error,
                 size: 20,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 'Riskiest Assumption',
                 style: TextStyle(

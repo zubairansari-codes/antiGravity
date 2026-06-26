@@ -21,16 +21,6 @@ import 'settings_providers.dart';
 // ── Session State ─────────────────────────────────────────────────
 
 class BrainstormSessionState {
-  final List<ChatMessage> messages;
-  final bool isListening;
-  final bool isSpeaking;
-  final bool isProcessing;
-  final BrainstormResult? result;
-  final String? error;
-  final String sessionId;
-  final BrainstormCategory category;
-  final String? liveTranscript;
-  final bool showPaywall;
 
   const BrainstormSessionState({
     this.messages = const [],
@@ -44,6 +34,16 @@ class BrainstormSessionState {
     this.liveTranscript,
     this.showPaywall = false,
   });
+  final List<ChatMessage> messages;
+  final bool isListening;
+  final bool isSpeaking;
+  final bool isProcessing;
+  final BrainstormResult? result;
+  final String? error;
+  final String sessionId;
+  final BrainstormCategory category;
+  final String? liveTranscript;
+  final bool showPaywall;
 
   BrainstormSessionState copyWith({
     List<ChatMessage>? messages,
@@ -79,14 +79,11 @@ final brainstormSessionVmProvider =
   BrainstormSessionVm.new,
 );
 
-class BrainstormSessionVm extends Notifier<BrainstormSessionState> {
+class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
   bool _speechInitialized = false;
 
   /// Keeps track of whether we're in continuous back-and-forth mode.
   bool _continuousMode = false;
-
-  /// Prevents double-firing if both silence timeout and status event trigger.
-  bool _isProcessing = false;
 
   /// Timer for auto-retrying listening after error.
   Timer? _restartTimer;
@@ -201,7 +198,8 @@ class BrainstormSessionVm extends Notifier<BrainstormSessionState> {
           sessionId: brainstorm.id,
           category: brainstorm.category,
         );
-        _startListeningInternal();
+        // Initialize speech and start the continuous listening loop.
+        startListening();
       },
     );
   }

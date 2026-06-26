@@ -1,6 +1,7 @@
 /// Home screen — lists past brainstorms with search, filters, and a FAB to start a new session.
 library;
 
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +11,6 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/feedback/error_view.dart';
 import '../../../../core/widgets/feedback/loading_spinner.dart';
-import '../../domain/entities/brainstorm.dart';
 import '../../domain/entities/brainstorm_category.dart';
 import '../providers/home_viewmodel.dart';
 import '../providers/settings_providers.dart';
@@ -87,13 +87,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
+        title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.rocket_launch_rounded,
                 color: AppColors.primary, size: 22),
-            const SizedBox(width: 8),
-            const Text(
+            SizedBox(width: 8),
+            Text(
               'AntiGravity',
               style: TextStyle(fontWeight: FontWeight.w800),
             ),
@@ -154,7 +154,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         .read(homeCategoryFilterProvider.notifier)
                         .state = category,
                   );
-                }).toList(),
+                }),
               ],
             ),
           ),
@@ -221,15 +221,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 }
 
 class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final ValueChanged<bool>? onSelected;
 
   const _FilterChip({
     required this.label,
     required this.selected,
     this.onSelected,
   });
+  final String label;
+  final bool selected;
+  final ValueChanged<bool>? onSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -251,9 +251,9 @@ class _FilterChip extends StatelessWidget {
 }
 
 class _DailyUsageIndicator extends StatelessWidget {
-  final int count;
 
   const _DailyUsageIndicator({required this.count});
+  final int count;
 
   @override
   Widget build(BuildContext context) {
@@ -303,9 +303,9 @@ class _DailyUsageIndicator extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  final bool hasFilters;
 
   const _EmptyState({this.hasFilters = false});
+  final bool hasFilters;
 
   @override
   Widget build(BuildContext context) {
@@ -330,7 +330,7 @@ class _EmptyState extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'Try adjusting your search or filters.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -354,7 +354,7 @@ class _EmptyState extends StatelessWidget {
             Container(
               width: 88,
               height: 88,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: AppColors.primaryGradient,
                 shape: BoxShape.circle,
               ),
@@ -377,7 +377,7 @@ class _EmptyState extends StatelessWidget {
 
             const SizedBox(height: 8),
 
-            Text(
+            const Text(
               'Tap the mic to start your first\nbrainstorming session with AI.',
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -390,7 +390,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 32),
 
             // Feature pills
-            Wrap(
+            const Wrap(
               spacing: 8,
               runSpacing: 8,
               alignment: WrapAlignment.center,
@@ -411,10 +411,10 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _FeaturePill extends StatelessWidget {
-  final IconData icon;
-  final String label;
 
   const _FeaturePill({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -431,7 +431,7 @@ class _FeaturePill extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
               color: AppColors.onSurfaceVariant,
@@ -462,7 +462,7 @@ class _CategorySelectionSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Who do you want to brainstorm with?',
             style: TextStyle(
               fontSize: 15,
@@ -492,7 +492,7 @@ class _CategorySelectionSheet extends StatelessWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: AppColors.surface,
                           shape: BoxShape.circle,
                         ),
@@ -513,7 +513,7 @@ class _CategorySelectionSheet extends StatelessWidget {
                             const SizedBox(height: 4),
                             Text(
                               category.description,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 13,
                                 color: AppColors.onSurfaceVariant,
                               ),
@@ -530,7 +530,7 @@ class _CategorySelectionSheet extends StatelessWidget {
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

@@ -65,13 +65,13 @@ final ThemeData _darkTheme = ThemeData(
   scaffoldBackgroundColor: const Color(0xFF12121A),
   // Let Material 3 generate the dark text theme automatically.
 
-  appBarTheme: AppBarTheme(
+  appBarTheme: const AppBarTheme(
     elevation: 0,
     scrolledUnderElevation: 0.5,
     centerTitle: true,
-    backgroundColor: const Color(0xFF12121A),
-    foregroundColor: const Color(0xFFECECF5),
-    titleTextStyle: const TextStyle(
+    backgroundColor: Color(0xFF12121A),
+    foregroundColor: Color(0xFFECECF5),
+    titleTextStyle: TextStyle(
       color: Color(0xFFECECF5),
     ),
   ),

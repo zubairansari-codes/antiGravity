@@ -12,12 +12,6 @@ import '../../domain/entities/brainstorm_result.dart';
 import '../../domain/entities/chat_message.dart';
 
 class BrainstormModel {
-  final String id;
-  final String title;
-  final String categoryId;
-  final List<Map<String, dynamic>> messagesJson;
-  final Map<String, dynamic>? resultJson;
-  final DateTime createdAt;
 
   const BrainstormModel({
     required this.id,
@@ -59,6 +53,28 @@ class BrainstormModel {
         createdAt: b.createdAt,
       );
 
+  /// Restore from a Hive Map.
+  factory BrainstormModel.fromMap(Map<dynamic, dynamic> map) {
+    return BrainstormModel(
+      id: map['id'] as String,
+      title: map['title'] as String,
+      categoryId: map['categoryId'] as String? ?? 'general',
+      messagesJson: (map['messages'] as List)
+          .map((m) => Map<String, dynamic>.from(m as Map))
+          .toList(),
+      resultJson: map['result'] != null
+          ? Map<String, dynamic>.from(map['result'] as Map)
+          : null,
+      createdAt: DateTime.parse(map['createdAt'] as String),
+    );
+  }
+  final String id;
+  final String title;
+  final String categoryId;
+  final List<Map<String, dynamic>> messagesJson;
+  final Map<String, dynamic>? resultJson;
+  final DateTime createdAt;
+
   /// From storage → domain entity.
   Brainstorm toEntity() => Brainstorm(
         id: id,
@@ -87,22 +103,6 @@ class BrainstormModel {
         'result': resultJson,
         'createdAt': createdAt.toIso8601String(),
       };
-
-  /// Restore from a Hive Map.
-  factory BrainstormModel.fromMap(Map<dynamic, dynamic> map) {
-    return BrainstormModel(
-      id: map['id'] as String,
-      title: map['title'] as String,
-      categoryId: map['categoryId'] as String? ?? 'general',
-      messagesJson: (map['messages'] as List)
-          .map((m) => Map<String, dynamic>.from(m as Map))
-          .toList(),
-      resultJson: map['result'] != null
-          ? Map<String, dynamic>.from(map['result'] as Map)
-          : null,
-      createdAt: DateTime.parse(map['createdAt'] as String),
-    );
-  }
 
   static BrainstormResult _parseResult(Map<String, dynamic> json) {
     return BrainstormResult(

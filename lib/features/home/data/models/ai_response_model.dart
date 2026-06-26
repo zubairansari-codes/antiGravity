@@ -20,9 +20,6 @@ import '../../domain/entities/ai_response.dart';
 // ───────────────────────────────────────────────────────────
 
 class AIResponseModel {
-  final String text;
-  final bool isFinal;
-  final BrainstormResult? structuredResult;
 
   const AIResponseModel({
     required this.text,
@@ -56,6 +53,9 @@ class AIResponseModel {
       structuredResult: result,
     );
   }
+  final String text;
+  final bool isFinal;
+  final BrainstormResult? structuredResult;
 
   /// Convert to domain entity.
   AIResponse toEntity() => AIResponse(
@@ -215,8 +215,8 @@ class AIResponseModel {
 // ───────────────────────────────────────────────────────────
 
 class ParseException implements Exception {
-  final String message;
   const ParseException(this.message);
+  final String message;
 
   @override
   String toString() => 'ParseException: $message';
@@ -263,11 +263,6 @@ String _snakeToCamel(String snake) {
 // ── Coding ────────────────────────────────────────────────
 
 class _CodingResult {
-  final String systemArchitecture;
-  final List<String> techStack;
-  final List<_ImplItem> implementationPlan;
-  final List<String> edgeCases;
-  final String riskiestAssumption;
 
   _CodingResult.fromJson(Map<String, dynamic> json)
       : systemArchitecture = (json['system_architecture'] ?? json['systemArchitecture'] ?? '') as String,
@@ -279,6 +274,11 @@ class _CodingResult {
     _requireList(json, 'implementation_plan');
     _requireField(json, 'riskiest_assumption');
   }
+  final String systemArchitecture;
+  final List<String> techStack;
+  final List<_ImplItem> implementationPlan;
+  final List<String> edgeCases;
+  final String riskiestAssumption;
 
   BrainstormResult toBrainstormResult() => BrainstormResult(
         refinedIdea: systemArchitecture.isNotEmpty
@@ -304,11 +304,6 @@ class _CodingResult {
 // ── Marketing ─────────────────────────────────────────────
 
 class _MarketingResult {
-  final String positioning;
-  final List<String> viralHooks;
-  final List<_ImplItem> distributionPlan;
-  final List<String> alternativeChannels;
-  final String riskiestAssumption;
 
   _MarketingResult.fromJson(Map<String, dynamic> json)
       : positioning = (json['positioning'] ?? '') as String,
@@ -320,6 +315,11 @@ class _MarketingResult {
     _requireList(json, 'distribution_plan');
     _requireField(json, 'riskiest_assumption');
   }
+  final String positioning;
+  final List<String> viralHooks;
+  final List<_ImplItem> distributionPlan;
+  final List<String> alternativeChannels;
+  final String riskiestAssumption;
 
   BrainstormResult toBrainstormResult() => BrainstormResult(
         refinedIdea: positioning,
@@ -341,11 +341,6 @@ class _MarketingResult {
 // ── Business ──────────────────────────────────────────────
 
 class _BusinessResult {
-  final String businessModel;
-  final String unfairAdvantage;
-  final List<_ImplItem> actionPlan;
-  final List<String> pivotAngles;
-  final String riskiestAssumption;
 
   _BusinessResult.fromJson(Map<String, dynamic> json)
       : businessModel = (json['business_model'] ?? json['businessModel'] ?? '') as String,
@@ -357,6 +352,11 @@ class _BusinessResult {
     _requireList(json, 'action_plan');
     _requireField(json, 'riskiest_assumption');
   }
+  final String businessModel;
+  final String unfairAdvantage;
+  final List<_ImplItem> actionPlan;
+  final List<String> pivotAngles;
+  final String riskiestAssumption;
 
   BrainstormResult toBrainstormResult() => BrainstormResult(
         refinedIdea: businessModel,
@@ -378,11 +378,6 @@ class _BusinessResult {
 // ── Writing ───────────────────────────────────────────────
 
 class _WritingResult {
-  final String narrativeArc;
-  final List<String> headlineIdeas;
-  final List<_ImplItem> draftingPlan;
-  final List<String> alternativeAngles;
-  final String riskiestAssumption;
 
   _WritingResult.fromJson(Map<String, dynamic> json)
       : narrativeArc = (json['narrative_arc'] ?? json['narrativeArc'] ?? '') as String,
@@ -394,6 +389,11 @@ class _WritingResult {
     _requireList(json, 'drafting_plan');
     _requireField(json, 'riskiest_assumption');
   }
+  final String narrativeArc;
+  final List<String> headlineIdeas;
+  final List<_ImplItem> draftingPlan;
+  final List<String> alternativeAngles;
+  final String riskiestAssumption;
 
   BrainstormResult toBrainstormResult() => BrainstormResult(
         refinedIdea: narrativeArc,
@@ -415,11 +415,6 @@ class _WritingResult {
 // ── Design ────────────────────────────────────────────────
 
 class _DesignResult {
-  final String coreExperience;
-  final List<String> keyScreens;
-  final List<_ImplItem> designPlan;
-  final List<String> alternativePatterns;
-  final String riskiestAssumption;
 
   _DesignResult.fromJson(Map<String, dynamic> json)
       : coreExperience = (json['core_experience'] ?? json['coreExperience'] ?? '') as String,
@@ -431,6 +426,11 @@ class _DesignResult {
     _requireList(json, 'design_plan');
     _requireField(json, 'riskiest_assumption');
   }
+  final String coreExperience;
+  final List<String> keyScreens;
+  final List<_ImplItem> designPlan;
+  final List<String> alternativePatterns;
+  final String riskiestAssumption;
 
   BrainstormResult toBrainstormResult() => BrainstormResult(
         refinedIdea: coreExperience,
@@ -452,11 +452,6 @@ class _DesignResult {
 // ── Personal ──────────────────────────────────────────────
 
 class _PersonalResult {
-  final String refinedGoal;
-  final _HabitLoop habitLoop;
-  final List<_ImplItem> actionPlan;
-  final List<String> failStateProtocols;
-  final String riskiestAssumption;
 
   _PersonalResult.fromJson(Map<String, dynamic> json)
       : refinedGoal = (json['refined_goal'] ?? json['refinedGoal'] ?? '') as String,
@@ -468,6 +463,11 @@ class _PersonalResult {
     _requireList(json, 'action_plan');
     _requireField(json, 'riskiest_assumption');
   }
+  final String refinedGoal;
+  final _HabitLoop habitLoop;
+  final List<_ImplItem> actionPlan;
+  final List<String> failStateProtocols;
+  final String riskiestAssumption;
 
   BrainstormResult toBrainstormResult() => BrainstormResult(
         refinedIdea: refinedGoal,
@@ -488,24 +488,19 @@ class _PersonalResult {
 }
 
 class _HabitLoop {
-  final String trigger;
-  final String action;
-  final String reward;
 
   _HabitLoop.fromJson(dynamic json)
       : trigger = (json['trigger'] ?? '') as String,
         action = (json['action'] ?? '') as String,
         reward = (json['reward'] ?? '') as String;
+  final String trigger;
+  final String action;
+  final String reward;
 }
 
 // ── General ───────────────────────────────────────────────
 
 class _GeneralResult {
-  final String refinedIdea;
-  final String readyPrompt;
-  final List<_ImplItem> actionPlan;
-  final List<String> alternativeAngles;
-  final String riskiestAssumption;
 
   _GeneralResult.fromJson(Map<String, dynamic> json)
       : refinedIdea = (json['refined_idea'] ?? json['refinedIdea'] ?? '') as String,
@@ -517,6 +512,11 @@ class _GeneralResult {
     _requireList(json, 'action_plan');
     _requireField(json, 'riskiest_assumption');
   }
+  final String refinedIdea;
+  final String readyPrompt;
+  final List<_ImplItem> actionPlan;
+  final List<String> alternativeAngles;
+  final String riskiestAssumption;
 
   BrainstormResult toBrainstormResult() => BrainstormResult(
         refinedIdea: refinedIdea,
@@ -538,11 +538,11 @@ class _GeneralResult {
 // ── Shared parsers ────────────────────────────────────────
 
 class _ImplItem {
+
+  _ImplItem({required this.title, required this.description, this.priority = 'medium'});
   final String title;
   final String description;
   final String priority;
-
-  _ImplItem({required this.title, required this.description, this.priority = 'medium'});
 }
 
 List<String> _parseStringList(dynamic value) {
@@ -571,10 +571,10 @@ List<_ImplItem> _parseImplList(dynamic value) {
 // ───────────────────────────────────────────────────────────
 
 class CategorySchema {
-  final BrainstormCategory category;
-  final String description;
 
   const CategorySchema._({required this.category, required this.description});
+  final BrainstormCategory category;
+  final String description;
 
   /// Returns the JSON schema description for the given category.
   /// This text is injected into the final prompt so the model knows

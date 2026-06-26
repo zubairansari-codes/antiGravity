@@ -8,9 +8,9 @@ import '../models/brainstorm_model.dart';
 import 'brainstorm_local_ds_interface.dart';
 
 class BrainstormLocalDataSource implements IBrainstormLocalDataSource {
-  final Box<BrainstormModel> _box;
 
   const BrainstormLocalDataSource(this._box);
+  final Box<BrainstormModel> _box;
 
   /// Load all saved brainstorms, sorted by most recent first.
   @override

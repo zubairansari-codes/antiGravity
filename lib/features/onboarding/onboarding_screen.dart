@@ -3,7 +3,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../features/home/presentation/providers/settings_providers.dart';
@@ -70,7 +69,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 padding: const EdgeInsets.all(16),
                 child: TextButton(
                   onPressed: _finish,
-                  child: Text(
+                  child: const Text(
                     'Skip',
                     style: TextStyle(
                       color: AppColors.onSurfaceVariant,
@@ -161,10 +160,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 }
 
 class _OnboardingPage extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String description;
-  final Color color;
 
   const _OnboardingPage({
     required this.icon,
@@ -172,6 +167,10 @@ class _OnboardingPage extends StatelessWidget {
     required this.description,
     required this.color,
   });
+  final IconData icon;
+  final String title;
+  final String description;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -219,7 +218,7 @@ class _OnboardingPage extends StatelessWidget {
           Text(
             description,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 15,
               color: AppColors.onSurfaceVariant,
               height: 1.5,

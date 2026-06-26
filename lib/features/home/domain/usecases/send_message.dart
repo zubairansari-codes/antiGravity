@@ -11,9 +11,9 @@ import '../entities/chat_message.dart';
 import '../repositories/brainstorm_repository.dart';
 
 class SendMessageUseCase {
-  final BrainstormRepository repository;
 
   const SendMessageUseCase(this.repository);
+  final BrainstormRepository repository;
 
   Future<Either<Failure, AIResponse>> call(SendMessageParams params) {
     // Count exchanges (pairs of user + assistant messages)
@@ -37,13 +37,13 @@ class SendMessageUseCase {
 }
 
 class SendMessageParams {
-  final List<ChatMessage> messages;
-  final bool requestFinalOutput;
-  final BrainstormCategory category;
 
   const SendMessageParams({
     required this.messages,
     this.requestFinalOutput = false,
     required this.category,
   });
+  final List<ChatMessage> messages;
+  final bool requestFinalOutput;
+  final BrainstormCategory category;
 }

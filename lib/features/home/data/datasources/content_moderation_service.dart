@@ -96,11 +96,6 @@ class ContentModerationService {
 enum ModerationSeverity { clean, warning, blocked }
 
 class ModerationResult {
-  final bool isFlagged;
-  final ModerationSeverity severity;
-  final String reason;
-  final List<String> flaggedKeywords;
-  final bool isMentalHealthRelated;
 
   const ModerationResult({
     required this.isFlagged,
@@ -117,6 +112,11 @@ class ModerationResult {
         flaggedKeywords: [],
         isMentalHealthRelated: false,
       );
+  final bool isFlagged;
+  final ModerationSeverity severity;
+  final String reason;
+  final List<String> flaggedKeywords;
+  final bool isMentalHealthRelated;
 
   bool get shouldBlock => severity == ModerationSeverity.blocked;
   bool get shouldWarn => severity == ModerationSeverity.warning;

@@ -79,16 +79,18 @@ class SpeechServiceImpl implements SpeechService {
 
   @override
   Future<bool> initialize() async {
-    // Configure iOS audio session for playback + recording.
-    await _flutterTts.setIosAudioCategory(
-      IosTextToSpeechAudioCategory.playback,
-      [
-        IosTextToSpeechAudioCategoryOptions.allowBluetooth,
-        IosTextToSpeechAudioCategoryOptions.allowBluetoothA2DP,
-        IosTextToSpeechAudioCategoryOptions.mixWithOthers,
-      ],
-    );
-    await _flutterTts.setSharedInstance(true);
+    // Configure iOS audio session for playback + recording (iOS only).
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      await _flutterTts.setIosAudioCategory(
+        IosTextToSpeechAudioCategory.playback,
+        [
+          IosTextToSpeechAudioCategoryOptions.allowBluetooth,
+          IosTextToSpeechAudioCategoryOptions.allowBluetoothA2DP,
+          IosTextToSpeechAudioCategoryOptions.mixWithOthers,
+        ],
+      );
+      await _flutterTts.setSharedInstance(true);
+    }
 
     final sttAvailable = await _stt.initialize(
       onError: (error) => debugPrint('STT Error: ${error.errorMsg}'),
