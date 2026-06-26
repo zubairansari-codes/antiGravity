@@ -9,24 +9,39 @@
 /// - Common pitfalls to avoid
 library;
 
+import '../entities/artefact_type.dart';
 import '../entities/brainstorm_category.dart';
+import '../entities/riff_style.dart';
 
 class CategoryPromptProfile {
   const CategoryPromptProfile({
     required this.category,
     required this.persona,
+    required this.voice,
+    required this.riffStyle,
+    required this.outputFormats,
     required this.goal,
     required this.synthesisSteps,
     required this.qualityCriteria,
     required this.readyPromptTemplate,
     required this.commonPitfalls,
+    this.lenses = const [],
     this.examples = const {},
   });
 
   final BrainstormCategory category;
 
-  /// Short persona description, e.g. "Senior Staff Engineer".
+  /// Domain expertise the AI can draw on, e.g. "Senior Staff Engineer".
   final String persona;
+
+  /// Short tone description for spoken responses, e.g. "curious sparring partner".
+  final String voice;
+
+  /// Default improvisation tactic for this category.
+  final RiffStyle riffStyle;
+
+  /// Artefact formats this category can produce at the end of a session.
+  final List<ArtefactType> outputFormats;
 
   /// One-sentence goal for the final output.
   final String goal;
@@ -43,6 +58,9 @@ class CategoryPromptProfile {
 
   /// Common mistakes for this category that the model should avoid.
   final List<String> commonPitfalls;
+
+  /// Optional cross-domain lenses this category can borrow from.
+  final List<String> lenses;
 
   /// Optional example snippets (key -> short example text).
   final Map<String, String> examples;

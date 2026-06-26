@@ -6,8 +6,10 @@ import 'package:fpdart/fpdart.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/ai_response.dart';
+import '../entities/artefact_type.dart';
 import '../entities/brainstorm_category.dart';
 import '../entities/chat_message.dart';
+import '../entities/conversation_mode.dart';
 import '../repositories/brainstorm_repository.dart';
 
 class SendMessageUseCase {
@@ -32,6 +34,8 @@ class SendMessageUseCase {
       params.messages,
       requestFinalOutput: params.requestFinalOutput,
       category: params.category,
+      mode: params.mode,
+      requestedArtefact: params.requestedArtefact,
     );
   }
 }
@@ -42,8 +46,12 @@ class SendMessageParams {
     required this.messages,
     this.requestFinalOutput = false,
     required this.category,
+    this.mode = ConversationMode.riff,
+    this.requestedArtefact,
   });
   final List<ChatMessage> messages;
   final bool requestFinalOutput;
   final BrainstormCategory category;
+  final ConversationMode mode;
+  final ArtefactType? requestedArtefact;
 }

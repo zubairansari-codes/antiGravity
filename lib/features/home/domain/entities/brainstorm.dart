@@ -7,6 +7,7 @@ library;
 import 'brainstorm_category.dart';
 import 'brainstorm_result.dart';
 import 'chat_message.dart';
+import 'conversation_artefact.dart';
 
 class Brainstorm {
 
@@ -16,13 +17,19 @@ class Brainstorm {
     this.category = BrainstormCategory.general,
     required this.messages,
     this.result,
+    this.artefacts = const [],
     required this.createdAt,
   });
   final String id;
   final String title;
   final BrainstormCategory category;
   final List<ChatMessage> messages;
+
+  /// Legacy structured result — kept for backward compatibility.
   final BrainstormResult? result;
+
+  /// New flexible artefacts produced at the end of the session.
+  final List<ConversationArtefact> artefacts;
   final DateTime createdAt;
 
   /// Create a copy with updated fields.
@@ -32,6 +39,7 @@ class Brainstorm {
     BrainstormCategory? category,
     List<ChatMessage>? messages,
     BrainstormResult? result,
+    List<ConversationArtefact>? artefacts,
     DateTime? createdAt,
   }) {
     return Brainstorm(
@@ -40,12 +48,13 @@ class Brainstorm {
       category: category ?? this.category,
       messages: messages ?? this.messages,
       result: result ?? this.result,
+      artefacts: artefacts ?? this.artefacts,
       createdAt: createdAt ?? this.createdAt,
     );
   }
 
   /// Whether this session has been completed with a final output.
-  bool get isComplete => result != null;
+  bool get isComplete => result != null || artefacts.isNotEmpty;
 
   /// Short preview text for the home screen card.
   String get preview {

@@ -5,6 +5,7 @@
 library;
 
 import 'brainstorm_result.dart';
+import 'conversation_artefact.dart';
 
 class AIResponse {
 
@@ -12,6 +13,7 @@ class AIResponse {
     required this.text,
     required this.isFinal,
     this.structuredResult,
+    this.artefacts = const [],
   });
   /// The raw text content from the AI.
   final String text;
@@ -19,9 +21,12 @@ class AIResponse {
   /// Whether this is the final structured output (vs conversation).
   final bool isFinal;
 
-  /// Parsed result — only present when [isFinal] is true.
+  /// Parsed legacy result — kept for backward compatibility.
   final BrainstormResult? structuredResult;
 
+  /// Flexible artefacts produced at the end of a session.
+  final List<ConversationArtefact> artefacts;
+
   @override
-  String toString() => 'AIResponse(isFinal: $isFinal, len: ${text.length})';
+  String toString() => 'AIResponse(isFinal: $isFinal, artefacts: ${artefacts.length})';
 }

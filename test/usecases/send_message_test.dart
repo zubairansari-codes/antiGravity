@@ -1,7 +1,9 @@
 import 'package:antigravity/core/errors/failures.dart';
 import 'package:antigravity/features/home/domain/entities/ai_response.dart';
+import 'package:antigravity/features/home/domain/entities/artefact_type.dart';
 import 'package:antigravity/features/home/domain/entities/brainstorm_category.dart';
 import 'package:antigravity/features/home/domain/entities/chat_message.dart';
+import 'package:antigravity/features/home/domain/entities/conversation_mode.dart';
 import 'package:antigravity/features/home/domain/repositories/brainstorm_repository.dart';
 import 'package:antigravity/features/home/domain/usecases/send_message.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +15,8 @@ class MockBrainstormRepository extends Mock implements BrainstormRepository {}
 void main() {
   setUpAll(() {
     registerFallbackValue(BrainstormCategory.general);
+    registerFallbackValue(ConversationMode.riff);
+    registerFallbackValue(ArtefactType.actionPlan);
   });
 
   late SendMessageUseCase useCase;
@@ -34,6 +38,8 @@ void main() {
             any(),
             requestFinalOutput: any(named: 'requestFinalOutput'),
             category: any(named: 'category'),
+            mode: any(named: 'mode'),
+            requestedArtefact: any(named: 'requestedArtefact'),
           )).thenAnswer((_) async => const Right(response));
 
       final result = await useCase(
@@ -79,6 +85,8 @@ void main() {
             any(),
             requestFinalOutput: any(named: 'requestFinalOutput'),
             category: any(named: 'category'),
+            mode: any(named: 'mode'),
+            requestedArtefact: any(named: 'requestedArtefact'),
           ));
     });
 
@@ -118,6 +126,8 @@ void main() {
             any(),
             requestFinalOutput: any(named: 'requestFinalOutput'),
             category: any(named: 'category'),
+            mode: any(named: 'mode'),
+            requestedArtefact: any(named: 'requestedArtefact'),
           )).thenAnswer((_) async => const Right(response));
 
       final result = await useCase(
@@ -137,6 +147,8 @@ void main() {
             any(),
             requestFinalOutput: any(named: 'requestFinalOutput'),
             category: any(named: 'category'),
+            mode: any(named: 'mode'),
+            requestedArtefact: any(named: 'requestedArtefact'),
           )).thenAnswer((_) async => const Right(response));
 
       final result = await useCase(
@@ -153,10 +165,14 @@ void main() {
             any(),
             requestFinalOutput: captureAny(named: 'requestFinalOutput'),
             category: captureAny(named: 'category'),
+            mode: captureAny(named: 'mode'),
+            requestedArtefact: captureAny(named: 'requestedArtefact'),
           )).captured;
 
       expect(captured[0], true); // requestFinalOutput
       expect(captured[1], BrainstormCategory.coding); // category
+      expect(captured[2], ConversationMode.riff); // mode default
+      expect(captured[3], isNull); // requestedArtefact default
     });
 
     test('propagates repository failures', () async {
