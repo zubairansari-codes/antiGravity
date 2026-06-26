@@ -1,3 +1,5 @@
+import 'voice_personas.dart';
+
 // App-wide constants — API config, timeouts, free-tier limits.
 //
 // API keys are injected at build time via --dart-define.
@@ -32,6 +34,12 @@ abstract final class AppConstants {
   static const String elevenLabsBaseUrl = 'https://api.elevenlabs.io/v1';
   static const String elevenLabsVoiceId = '21m00Tcm4TlvDq8ikWAM'; // "Rachel"
   static const String elevenLabsModelId = 'eleven_turbo_v2_5';
+
+  /// Default TTS voice persona.
+  static const VoicePersona defaultVoicePersona = VoicePersonas.rachel;
+
+  /// Available silence-timeout presets for voice input (in milliseconds).
+  static const List<int> silenceTimeoutPresets = [500, 1000, 2000, 4000];
 
   /// Hive box names.
   static const String brainstormBoxName = 'brainstorms';

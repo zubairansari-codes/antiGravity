@@ -11,6 +11,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../core/constants/app_constants.dart';
+import '../core/constants/voice_personas.dart';
 
 /// Abstract interface for testability.
 abstract class SpeechService {
@@ -18,10 +19,15 @@ abstract class SpeechService {
   Future<void> startListening({
     required ValueChanged<String> onResult,
     required ValueChanged<String> onError,
+    Duration? pauseDuration,
   });
   Future<void> stopListening();
-  Future<void> speak(String text);
+  Future<void> speak(String text, {VoicePersona? persona});
   Future<void> stopSpeaking();
+
+  /// Interrupt TTS and return the position where playback stopped,
+  /// so callers can resume from slightly earlier if desired.
+  Future<Duration?> interruptSpeaking();
   Future<void> dispose();
   bool get isListening;
   bool get isSpeaking;
@@ -50,7 +56,7 @@ class SpeechServiceImpl implements SpeechService {
 
   /// Silence detection timer — auto-stops STT after pause.
   Timer? _silenceTimer;
-  static const _silenceTimeout = Duration(seconds: 2);
+  Duration _silenceTimeout = const Duration(seconds: 2);
 
   /// Create a Dio instance configured for ElevenLabs API.
   static Dio _createElevenLabsDio() {
@@ -116,11 +122,13 @@ class SpeechServiceImpl implements SpeechService {
   Future<void> startListening({
     required ValueChanged<String> onResult,
     required ValueChanged<String> onError,
+    Duration? pauseDuration,
   }) async {
     if (_isSpeaking) {
       await stopSpeaking();
     }
 
+    _silenceTimeout = pauseDuration ?? const Duration(seconds: 2);
     _isListening = true;
     String lastWords = '';
     bool resultFired = false; // Prevent double-fire on web.
@@ -188,13 +196,25 @@ class SpeechServiceImpl implements SpeechService {
   }
 
   @override
-  Future<void> speak(String text) async {
+  Future<Duration?> interruptSpeaking() async {
+    if (!_isSpeaking || _player == null) return null;
+
+    // Capture current position so a caller can resume slightly earlier if desired.
+    final position = _player!.position;
+    await _player!.stop();
+    _isSpeaking = false;
+    return position;
+  }
+
+  @override
+  Future<void> speak(String text, {VoicePersona? persona}) async {
     if (_disposed) return;
     if (_isListening) {
       await stopListening();
     }
 
     _isSpeaking = true;
+    final voice = persona ?? AppConstants.defaultVoicePersona;
 
     // Explicitly dispose any previous player to reset the Web Audio state.
     await _player?.stop();
@@ -206,15 +226,15 @@ class SpeechServiceImpl implements SpeechService {
     try {
       // Call ElevenLabs TTS API.
       final response = await _elevenlabsDio.post(
-        '/text-to-speech/${AppConstants.elevenLabsVoiceId}',
+        '/text-to-speech/${voice.id}',
         data: {
           'text': text,
           'model_id': AppConstants.elevenLabsModelId,
           'voice_settings': {
-            'stability': 0.4, // Lower = more expressive/variable
-            'similarity_boost': 0.8, // High = stays close to voice
-            'style': 0.6, // Expressiveness
-            'use_speaker_boost': true,
+            'stability': voice.stability,
+            'similarity_boost': voice.similarityBoost,
+            'style': voice.style,
+            'use_speaker_boost': voice.useSpeakerBoost,
           },
         },
       );
