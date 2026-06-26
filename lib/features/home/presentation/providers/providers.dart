@@ -14,6 +14,7 @@ import '../../../../core/network/network_info.dart';
 import '../../../../services/speech_service.dart';
 import '../../data/datasources/brainstorm_local_ds.dart';
 import '../../data/datasources/brainstorm_remote_ds.dart';
+import '../../data/datasources/conversation_context_manager.dart';
 import '../../data/models/brainstorm_model.dart';
 import '../../data/repositories/brainstorm_repository_impl.dart';
 import '../../domain/repositories/brainstorm_repository.dart';
@@ -51,6 +52,11 @@ final brainstormLocalDsProvider =
   return BrainstormLocalDataSource(box);
 });
 
+final conversationContextManagerProvider =
+    Provider<ConversationContextManager>((ref) {
+  return ConversationContextManager(ref.watch(brainstormRemoteDsProvider));
+});
+
 // ── Repository ────────────────────────────────────────────────────
 
 final brainstormRepositoryProvider =
@@ -58,6 +64,7 @@ final brainstormRepositoryProvider =
   return BrainstormRepositoryImpl(
     ref.watch(brainstormRemoteDsProvider),
     ref.watch(brainstormLocalDsProvider),
+    ref.watch(conversationContextManagerProvider),
   );
 });
 

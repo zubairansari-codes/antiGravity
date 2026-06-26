@@ -39,6 +39,8 @@ class BrainstormSessionState {
     this.showPaywall = false,
     this.mode = ConversationMode.riff,
     this.requestedArtefact,
+    this.warning,
+    this.contextSummary,
   });
   final List<ChatMessage> messages;
   final bool isListening;
@@ -53,6 +55,8 @@ class BrainstormSessionState {
   final bool showPaywall;
   final ConversationMode mode;
   final ArtefactType? requestedArtefact;
+  final String? warning;
+  final String? contextSummary;
 
   BrainstormSessionState copyWith({
     List<ChatMessage>? messages,
@@ -68,6 +72,8 @@ class BrainstormSessionState {
     bool? showPaywall,
     ConversationMode? mode,
     ArtefactType? requestedArtefact,
+    String? warning,
+    String? contextSummary,
   }) {
     return BrainstormSessionState(
       messages: messages ?? this.messages,
@@ -83,6 +89,8 @@ class BrainstormSessionState {
       showPaywall: showPaywall ?? this.showPaywall,
       mode: mode ?? this.mode,
       requestedArtefact: requestedArtefact ?? this.requestedArtefact,
+      warning: warning ?? this.warning,
+      contextSummary: contextSummary ?? this.contextSummary,
     );
   }
 }
@@ -184,6 +192,9 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
           result: session.result,
           artefacts: session.artefacts,
           category: session.category,
+          mode: ref.read(defaultConversationModeProvider),
+          warning: null,
+          contextSummary: null,
         );
       },
     );
@@ -213,6 +224,9 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
         state = state.copyWith(
           sessionId: brainstorm.id,
           category: brainstorm.category,
+          mode: ref.read(defaultConversationModeProvider),
+          warning: null,
+          contextSummary: null,
         );
         // Initialize speech and start the continuous listening loop.
         startListening();
@@ -223,6 +237,11 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
   /// Dismiss the paywall modal.
   void dismissPaywall() {
     state = state.copyWith(showPaywall: false);
+  }
+
+  /// Dismiss the mental-health warning banner.
+  void dismissWarning() {
+    state = state.copyWith(warning: null);
   }
 
   /// Stop voice listening (exits continuous conversation mode).
@@ -367,6 +386,7 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
       isProcessing: true,
       liveTranscript: null,
       error: null,
+      warning: null,
     );
 
     // Check if user wants to wrap up.
@@ -412,6 +432,8 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
           messages: allMessages,
           isProcessing: false,
           isSpeaking: true,
+          contextSummary: aiResponse.contextSummary,
+          warning: aiResponse.isWarning ? aiResponse.text : null,
         );
 
         HapticFeedback.mediumImpact();
@@ -484,6 +506,8 @@ class BrainstormSessionVm extends AutoDisposeNotifier<BrainstormSessionState> {
           result: aiResponse.structuredResult,
           artefacts: aiResponse.artefacts,
           requestedArtefact: null,
+          contextSummary: aiResponse.contextSummary,
+          warning: aiResponse.isWarning ? aiResponse.text : null,
         );
         HapticFeedback.vibrate();
         Future.delayed(const Duration(milliseconds: 100), HapticFeedback.vibrate);

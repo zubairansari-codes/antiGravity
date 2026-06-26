@@ -11,6 +11,7 @@ import '../../../../core/constants/voice_personas.dart';
 import '../../../onboarding/onboarding_preferences.dart';
 import '../../domain/entities/brainstorm.dart';
 import '../../domain/entities/brainstorm_category.dart';
+import '../../domain/entities/conversation_mode.dart';
 import 'daily_usage_tracker.dart';
 import 'home_viewmodel.dart';
 
@@ -229,6 +230,39 @@ class VoicePersonaNotifier extends StateNotifier<VoicePersona> {
     state = persona;
     final box = await Hive.openBox<String>(_boxName);
     await box.put(_key, persona.id);
+  }
+}
+
+// ── Default conversation mode ─────────────────────────────────────
+
+final defaultConversationModeProvider =
+    StateNotifierProvider<DefaultConversationModeNotifier, ConversationMode>(
+  (ref) => DefaultConversationModeNotifier(),
+);
+
+class DefaultConversationModeNotifier extends StateNotifier<ConversationMode> {
+
+  DefaultConversationModeNotifier() : super(ConversationMode.riff) {
+    _load();
+  }
+  static const String _boxName = 'settings_mode';
+  static const String _key = 'defaultConversationMode';
+
+  Future<void> _load() async {
+    final box = await Hive.openBox<String>(_boxName);
+    final value = box.get(_key);
+    if (value != null) {
+      state = ConversationMode.values.firstWhere(
+        (e) => e.name == value,
+        orElse: () => ConversationMode.riff,
+      );
+    }
+  }
+
+  Future<void> setMode(ConversationMode mode) async {
+    state = mode;
+    final box = await Hive.openBox<String>(_boxName);
+    await box.put(_key, mode.name);
   }
 }
 

@@ -10,6 +10,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/voice_personas.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../domain/entities/conversation_mode.dart';
 import '../providers/home_viewmodel.dart';
 import '../providers/settings_providers.dart';
 
@@ -81,6 +82,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             value: voicePersona,
             onChanged: (persona) =>
                 ref.read(voicePersonaProvider.notifier).setPersona(persona),
+          ),
+
+          const Divider(height: 32),
+
+          // ── Improvisation ──────────────────────────────────
+          const _SectionHeader('Improvisation'),
+          _DefaultModeTile(
+            value: ref.watch(defaultConversationModeProvider),
+            onChanged: (mode) =>
+                ref.read(defaultConversationModeProvider.notifier).setMode(mode),
           ),
 
           const Divider(height: 32),
@@ -388,6 +399,55 @@ class _VoicePersonaTile extends StatelessWidget {
                 label: Text(persona.label.split(' —').first),
                 selected: isSelected,
                 onSelected: (_) => onChanged(persona),
+                selectedColor: AppColors.primary.withOpacity(0.15),
+                labelStyle: TextStyle(
+                  color: isSelected ? AppColors.primary : null,
+                  fontWeight: isSelected ? FontWeight.w700 : null,
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DefaultModeTile extends StatelessWidget {
+
+  const _DefaultModeTile({
+    required this.value,
+    required this.onChanged,
+  });
+  final ConversationMode value;
+  final ValueChanged<ConversationMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Default Mode',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'How AntiGravity starts every new session',
+            style: TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: ConversationMode.values.map((mode) {
+              final isSelected = mode == value;
+              return ChoiceChip(
+                label: Text(mode.label),
+                selected: isSelected,
+                onSelected: (_) => onChanged(mode),
                 selectedColor: AppColors.primary.withOpacity(0.15),
                 labelStyle: TextStyle(
                   color: isSelected ? AppColors.primary : null,

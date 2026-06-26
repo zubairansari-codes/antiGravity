@@ -260,6 +260,36 @@ class _BrainstormScreenState extends ConsumerState<BrainstormScreen> {
               ),
             ),
 
+          // Conversation summary strip
+          if (state.contextSummary != null && state.contextSummary!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Semantics(
+                label: 'Conversation summary: ${state.contextSummary}',
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    state.contextSummary!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.onSurfaceVariant,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
           // Chat messages + barge-in handler
           Expanded(
             child: GestureDetector(
@@ -357,6 +387,44 @@ class _BrainstormScreenState extends ConsumerState<BrainstormScreen> {
                     color: AppColors.error,
                     fontSize: 13,
                   ),
+                ),
+              ),
+            ),
+
+          // Soft moderation warning banner
+          if (state.warning != null)
+            Semantics(
+              liveRegion: true,
+              label: 'Wellness note: ${state.warning}',
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
+                color: AppColors.warning.withOpacity(0.12),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.favorite_border,
+                      size: 18,
+                      color: AppColors.warning,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        state.warning!,
+                        style: const TextStyle(
+                          color: AppColors.warning,
+                          fontSize: 13,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 18),
+                      color: AppColors.warning,
+                      onPressed: notifier.dismissWarning,
+                      tooltip: 'Dismiss',
+                    ),
+                  ],
                 ),
               ),
             ),
