@@ -95,7 +95,7 @@ class BrainstormRemoteDataSource implements IBrainstormRemoteDataSource {
     // Validate the most recent user message
     final lastUserMessage = messages.lastWhere(
       (m) => m.role == 'user',
-      orElse: () => const MessageModel(role: 'user', content: ''),
+      orElse: () => throw const ValidationException('No user message found.'),
     );
 
     final validationError = validateInput(lastUserMessage.content);
@@ -177,9 +177,7 @@ class BrainstormRemoteDataSource implements IBrainstormRemoteDataSource {
       data: requestData,
     );
 
-    // Extract response text (OpenAI format).
-    final choices = response.data['choices'] as List;
-    final content = choices[0]['message']['content'] as String;
+    final content = _extractContent(response);
 
     return AIResponseModel.fromContent(
       content,
@@ -216,14 +214,53 @@ class BrainstormRemoteDataSource implements IBrainstormRemoteDataSource {
       data: requestData,
     );
 
-    final choices = response.data['choices'] as List;
-    final content = choices[0]['message']['content'] as String;
+    final content = _extractContent(response);
 
     return AIResponseModel.fromContent(
       content,
       isFinal: requestFinal,
       category: category,
     );
+  }
+
+  /// Extract the assistant's content from a Groq/OpenAI-format response.
+  String _extractContent(Response response) {
+    final data = response.data;
+    if (data is! Map<String, dynamic>) {
+      throw const ParseException(
+        'Unexpected response format: response data is not a JSON object.',
+      );
+    }
+
+    final choices = data['choices'] as List?;
+    if (choices == null || choices.isEmpty) {
+      throw const ParseException(
+        'Unexpected response format: choices missing or empty.',
+      );
+    }
+
+    final firstChoice = choices[0];
+    if (firstChoice is! Map<String, dynamic>) {
+      throw const ParseException(
+        'Unexpected response format: first choice is not an object.',
+      );
+    }
+
+    final message = firstChoice['message'];
+    if (message is! Map<String, dynamic>) {
+      throw const ParseException(
+        'Unexpected response format: message missing.',
+      );
+    }
+
+    final content = message['content'] as String?;
+    if (content == null || content.isEmpty) {
+      throw const ParseException(
+        'Unexpected response format: content missing or empty.',
+      );
+    }
+
+    return content;
   }
 }
 
