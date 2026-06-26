@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:antigravity/features/home/data/models/ai_response_model.dart';
+import 'package:antigravity/features/home/domain/entities/artefact_type.dart';
 import 'package:antigravity/features/home/domain/entities/brainstorm_category.dart';
 import 'package:antigravity/features/home/domain/entities/brainstorm_result.dart';
+import 'package:antigravity/features/home/domain/entities/conversation_artefact.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -14,10 +16,81 @@ void main() {
       expect(model.text, text);
       expect(model.isFinal, false);
       expect(model.structuredResult, isNull);
+      expect(model.artefacts, isEmpty);
     });
   });
 
-  group('AIResponseModel.fromContent — JSON parsing (final mode)', () {
+  group('AIResponseModel.fromContent — artefact JSON (final mode)', () {
+    test('parses single artefact JSON into artefacts and legacy result', () {
+      final json = {
+        'artefact_type': 'actionPlan',
+        'title': 'Launch plan for the habit tracker',
+        'content': '1. Define the core loop\n2. Build the streak UI\n3. Add reminders',
+        'follow_up_questions': ['What is the trigger?', 'How will users recover from a miss?'],
+      };
+
+      final model = AIResponseModel.fromContent(
+        jsonEncode(json),
+        isFinal: true,
+        category: BrainstormCategory.personal,
+      );
+
+      expect(model.isFinal, true);
+      expect(model.artefacts.length, 1);
+      expect(model.artefacts.first.artefactType, ArtefactType.actionPlan);
+      expect(model.artefacts.first.title, 'Launch plan for the habit tracker');
+      expect(model.structuredResult, isNotNull);
+      expect(model.structuredResult!.refinedIdea, 'Launch plan for the habit tracker');
+      expect(model.structuredResult!.actionPlan.length, 3);
+    });
+
+    test('parses artefacts list', () {
+      final json = {
+        'artefacts': [
+          {
+            'artefact_type': 'ideaOnePager',
+            'title': 'Idea A',
+            'content': 'Content A',
+            'follow_up_questions': ['Q1'],
+          },
+          {
+            'artefact_type': 'pitchThread',
+            'title': 'Thread hook',
+            'content': 'Hook body',
+            'follow_up_questions': ['Q2'],
+          },
+        ],
+      };
+
+      final model = AIResponseModel.fromContent(
+        jsonEncode(json),
+        isFinal: true,
+        category: BrainstormCategory.general,
+      );
+
+      expect(model.artefacts.length, 2);
+      expect(model.artefacts.first.artefactType, ArtefactType.ideaOnePager);
+      expect(model.artefacts.last.artefactType, ArtefactType.pitchThread);
+    });
+
+    test('falls back to rawNotes for unknown artefact_type', () {
+      final json = {
+        'artefact_type': 'futureType',
+        'title': 'Future',
+        'content': 'Body',
+      };
+
+      final model = AIResponseModel.fromContent(
+        jsonEncode(json),
+        isFinal: true,
+        category: BrainstormCategory.general,
+      );
+
+      expect(model.artefacts.first.artefactType, ArtefactType.rawNotes);
+    });
+  });
+
+  group('AIResponseModel.fromContent — legacy JSON parsing (final mode)', () {
     test('parses Coding JSON correctly', () {
       final json = {
         'system_architecture': 'Use microservices with Redis caching',
@@ -42,6 +115,7 @@ void main() {
       expect(model.structuredResult!.actionPlan.length, 2);
       expect(model.structuredResult!.actionPlan.first.title, 'Set up CI/CD');
       expect(model.structuredResult!.riskiestAssumption, 'Users will tolerate 3s latency');
+      expect(model.artefacts, isEmpty);
     });
 
     test('parses Marketing JSON correctly', () {
@@ -179,13 +253,10 @@ void main() {
   group('AIResponseModel.fromContent — JSON wrapped in markdown code block', () {
     test('extracts JSON from ```json fence', () {
       final json = {
-        'refined_idea': 'Test idea',
-        'ready_prompt': 'Prompt text',
-        'action_plan': [
-          {'title': 'Step 1', 'description': 'Do thing', 'priority': 'high'},
-        ],
-        'alternative_angles': ['Alt 1'],
-        'riskiest_assumption': 'Assumption',
+        'artefact_type': 'ideaOnePager',
+        'title': 'Test idea',
+        'content': 'Prompt text',
+        'follow_up_questions': ['Next?'],
       };
 
       final content = '```json\n${jsonEncode(json)}\n```';
@@ -195,8 +266,8 @@ void main() {
         category: BrainstormCategory.general,
       );
 
-      expect(model.structuredResult, isNotNull);
-      expect(model.structuredResult!.refinedIdea, 'Test idea');
+      expect(model.artefacts, isNotNull);
+      expect(model.artefacts.first.title, 'Test idea');
     });
   });
 
@@ -237,10 +308,10 @@ Parents want to plan meals.
       final result = AIResponseModel.parseResult(markdown, category: BrainstormCategory.general);
 
       expect(result, isNotNull);
-      expect(result!.refinedIdea, 'A meal-planning app for busy parents.');
-      expect(result.actionPlan.length, 3);
-      expect(result.actionPlan.first.title, 'Survey parents');
-      expect(result.alternatives.length, 2);
+      expect(result!.legacyResult.refinedIdea, 'A meal-planning app for busy parents.');
+      expect(result.legacyResult.actionPlan.length, 3);
+      expect(result.legacyResult.actionPlan.first.title, 'Survey parents');
+      expect(result.legacyResult.alternatives.length, 2);
     });
 
     test('returns null when both JSON and markdown fail', () {
@@ -375,7 +446,7 @@ Users will care.
       );
 
       expect(result, isNotNull);
-      expect(result!.actionPlan.length, 2);
+      expect(result!.legacyResult.actionPlan.length, 2);
     });
 
     test('toEntity maps correctly', () {
@@ -389,6 +460,7 @@ Users will care.
       expect(entity.text, 'Hello');
       expect(entity.isFinal, false);
       expect(entity.structuredResult, isNull);
+      expect(entity.artefacts, isEmpty);
     });
 
     test('toEntity with structured result maps correctly', () {
@@ -404,21 +476,19 @@ Users will care.
         text: 'Raw text',
         isFinal: true,
         structuredResult: result,
+        artefacts: [
+          ConversationArtefact(
+            artefactType: ArtefactType.ideaOnePager,
+            title: 'Idea',
+            content: 'Content',
+          ),
+        ],
       );
 
       final entity = model.toEntity();
       expect(entity.structuredResult!.refinedIdea, 'Idea');
       expect(entity.structuredResult!.actionPlan.first.title, 'T');
-    });
-  });
-
-  group('CategorySchema descriptions', () {
-    test('returns non-empty schema for every category', () {
-      for (final category in BrainstormCategory.values) {
-        final schema = CategorySchema.forCategory(category);
-        expect(schema, isNotEmpty);
-        expect(schema, contains('Respond ONLY with a valid JSON object'));
-      }
+      expect(entity.artefacts.first.artefactType, ArtefactType.ideaOnePager);
     });
   });
 }

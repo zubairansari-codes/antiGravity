@@ -1,19 +1,23 @@
 /// AI response DTO — parses OpenAI output into domain objects.
 ///
-/// Supports two parsing modes:
-/// 1. **JSON mode** (preferred for final output) — structured JSON with
-///    schema validation per category.
-/// 2. **Markdown fallback** — legacy regex-based parsing for backward compat.
+/// Supports three parsing modes:
+/// 1. **Artefact JSON** (preferred for final output) — a flexible
+///    [ConversationArtefact] shape.
+/// 2. **Legacy JSON** — the original per-category structured schema, kept for
+///    backward compatibility.
+/// 3. **Markdown fallback** — regex-based parsing for unstructured responses.
 ///
-/// When JSON parsing fails, a [ParseException] is thrown with a
-/// descriptive message so the repository can trigger a corrective retry.
+/// When parsing fails, a [ParseException] is thrown with a descriptive message
+/// so the repository can trigger a corrective retry.
 library;
 
 import 'dart:convert';
 
+import '../../domain/entities/artefact_type.dart';
 import '../../domain/entities/brainstorm_category.dart';
 import '../../domain/entities/brainstorm_result.dart';
 import '../../domain/entities/ai_response.dart';
+import '../../domain/entities/conversation_artefact.dart';
 
 // ───────────────────────────────────────────────────────────
 //  AIResponseModel
@@ -25,12 +29,14 @@ class AIResponseModel {
     required this.text,
     required this.isFinal,
     this.structuredResult,
+    this.artefacts = const [],
   });
 
   /// Parse raw AI content into a model.
   ///
   /// For conversational mode, just wraps the text.
-  /// For final output, tries JSON first, then markdown fallback.
+  /// For final output, tries artefact JSON first, then legacy JSON, then
+  /// markdown fallback.
   factory AIResponseModel.fromContent(
     String content, {
     required bool isFinal,
@@ -50,51 +56,162 @@ class AIResponseModel {
     return AIResponseModel(
       text: content,
       isFinal: true,
-      structuredResult: result,
+      structuredResult: result.legacyResult,
+      artefacts: result.artefacts,
     );
   }
   final String text;
   final bool isFinal;
   final BrainstormResult? structuredResult;
+  final List<ConversationArtefact> artefacts;
 
   /// Convert to domain entity.
   AIResponse toEntity() => AIResponse(
         text: text,
         isFinal: isFinal,
         structuredResult: structuredResult,
+        artefacts: artefacts,
       );
 
   // ── Parsing entry point ─────────────────────────────────
 
-  /// Try JSON first, then markdown fallback.
+  /// Try artefact JSON first, then legacy JSON, then markdown fallback.
   ///
-  /// Throws [ParseException] if neither format can be parsed, so the caller
+  /// Throws [ParseException] if no format can be parsed, so the caller
   /// can decide to retry with a corrective prompt or show raw text.
-  static BrainstormResult? parseResult(
+  static ParseResult? parseResult(
     String content, {
     BrainstormCategory? category,
   }) {
-    // 1. Try JSON mode
+    Map<String, dynamic>? json;
     try {
-      final json = _extractJson(content);
-      if (json != null && category != null) {
-        return _parseJsonResult(json, category);
-      }
+      json = _extractJson(content);
     } on ParseException {
-      rethrow; // propagate validation errors so we can retry
+      rethrow;
     } catch (_) {
-      // Not valid JSON — fall through to markdown
+      // Not JSON — fall through to markdown.
     }
 
-    // 2. Markdown fallback (legacy)
+    if (json != null) {
+      // 1. Prefer the new artefact-first shape.
+      try {
+        final artefacts = _parseArtefactJson(json);
+        if (artefacts != null && artefacts.isNotEmpty) {
+          return ParseResult(
+            legacyResult: _artefactToLegacy(artefacts.first),
+            artefacts: artefacts,
+          );
+        }
+      } on ParseException {
+        rethrow;
+      } catch (_) {
+        // Not an artefact shape — keep trying.
+      }
+
+      // 2. Legacy per-category JSON schema.
+      try {
+        if (category != null) {
+          final legacy = _parseLegacyJsonResult(json, category);
+          return ParseResult(legacyResult: legacy, artefacts: const []);
+        }
+      } on ParseException {
+        rethrow;
+      } catch (_) {
+        // Not legacy JSON either.
+      }
+    }
+
+    // 3. Markdown fallback (legacy)
     try {
-      return _parseMarkdownResult(content);
+      final legacy = _parseMarkdownResult(content);
+      if (legacy != null) {
+        return ParseResult(legacyResult: legacy, artefacts: const []);
+      }
     } catch (_) {
       // ignore markdown failures
     }
 
-    // 3. Nothing worked — caller handles raw text display
+    // 4. Nothing worked — caller handles raw text display
     return null;
+  }
+
+  // ── Artefact JSON parsing ─────────────────────────────────
+
+  static List<ConversationArtefact>? _parseArtefactJson(
+    Map<String, dynamic> json,
+  ) {
+    // Single artefact object.
+    if (json.containsKey('artefact_type')) {
+      final artefact = _parseSingleArtefact(json);
+      return [artefact];
+    }
+
+    // List of artefacts.
+    if (json.containsKey('artefacts') && json['artefacts'] is List) {
+      final list = json['artefacts'] as List;
+      if (list.isEmpty) return null;
+      return list
+          .whereType<Map<String, dynamic>>()
+          .map(_parseSingleArtefact)
+          .toList();
+    }
+
+    return null;
+  }
+
+  static ConversationArtefact _parseSingleArtefact(Map<String, dynamic> json) {
+    final typeId = (json['artefact_type'] ?? json['artefactType']) as String?;
+    if (typeId == null || typeId.isEmpty) {
+      throw const ParseException('Missing artefact_type');
+    }
+
+    return ConversationArtefact(
+      artefactType: ArtefactType.fromId(typeId),
+      title: (json['title'] ?? '') as String,
+      content: (json['content'] ?? '') as String,
+      followUpQuestions: _parseStringList(json['follow_up_questions'] ?? json['followUpQuestions']),
+    );
+  }
+
+  static BrainstormResult _artefactToLegacy(ConversationArtefact artefact) {
+    final actionPlan = _extractActionPlanFromContent(artefact.content);
+    return BrainstormResult(
+      refinedIdea: artefact.title,
+      readyPrompt: artefact.content.length > 240
+          ? '${artefact.content.substring(0, 240)}…'
+          : artefact.content,
+      actionPlan: actionPlan,
+      alternatives: artefact.followUpQuestions,
+      riskiestAssumption: artefact.followUpQuestions.isNotEmpty
+          ? artefact.followUpQuestions.first
+          : '',
+    );
+  }
+
+  static List<ActionStep> _extractActionPlanFromContent(String content) {
+    final lines = content
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+
+    final actionLines = lines
+        .where(
+          (l) => RegExp(r'^[\d.\-*]+\s').hasMatch(l),
+        )
+        .toList();
+
+    if (actionLines.isEmpty) return [];
+
+    return actionLines.asMap().entries.map((entry) {
+      final clean = entry.value.replaceFirst(RegExp(r'^\s*[\d.\-*]+\s*'), '');
+      final parts = clean.split(RegExp(r'\s*[—–-]\s*'));
+      return ActionStep(
+        stepNumber: entry.key + 1,
+        title: parts[0].replaceFirst(RegExp(r'^[\*\[\]]+\s*'), '').trim(),
+        description: parts.length > 1 ? parts.sublist(1).join(' — ').trim() : '',
+      );
+    }).toList();
   }
 
   // ── JSON helpers ──────────────────────────────────────────
@@ -118,7 +235,7 @@ class AIResponseModel {
     return jsonDecode(jsonStr) as Map<String, dynamic>;
   }
 
-  static BrainstormResult _parseJsonResult(
+  static BrainstormResult _parseLegacyJsonResult(
     Map<String, dynamic> json,
     BrainstormCategory category,
   ) {
@@ -223,7 +340,21 @@ class ParseException implements Exception {
 }
 
 // ───────────────────────────────────────────────────────────
-//  CategoryResult helpers (internal)
+//  Internal parse result holder
+// ───────────────────────────────────────────────────────────
+
+class ParseResult {
+
+  const ParseResult({
+    required this.legacyResult,
+    required this.artefacts,
+  });
+  final BrainstormResult legacyResult;
+  final List<ConversationArtefact> artefacts;
+}
+
+// ───────────────────────────────────────────────────────────
+//  CategoryResult helpers (legacy)
 // ───────────────────────────────────────────────────────────
 
 void _requireField(Map<String, dynamic> json, String key) {
@@ -567,7 +698,7 @@ List<_ImplItem> _parseImplList(dynamic value) {
 }
 
 // ───────────────────────────────────────────────────────────
-//  CategorySchema — JSON schema descriptions for prompts
+//  CategorySchema — legacy JSON schema descriptions for prompts
 // ───────────────────────────────────────────────────────────
 
 class CategorySchema {
@@ -576,9 +707,8 @@ class CategorySchema {
   final BrainstormCategory category;
   final String description;
 
-  /// Returns the JSON schema description for the given category.
-  /// This text is injected into the final prompt so the model knows
-  /// exactly what JSON structure to emit.
+  /// Returns the legacy JSON schema description for the given category.
+  @Deprecated('Artefact-first prompts now use ArtefactSchema.')
   static String forCategory(BrainstormCategory category) {
     switch (category) {
       case BrainstormCategory.coding:

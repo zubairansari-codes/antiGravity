@@ -4,7 +4,9 @@
 /// from concrete Dio implementations.
 library;
 
+import '../../domain/entities/artefact_type.dart';
 import '../../domain/entities/brainstorm_category.dart';
+import '../../domain/entities/conversation_mode.dart';
 import '../models/ai_response_model.dart';
 import '../models/message_model.dart';
 
@@ -17,5 +19,7 @@ abstract class IBrainstormRemoteDataSource {
     List<MessageModel> messages, {
     required bool requestFinal,
     required BrainstormCategory category,
+    ConversationMode mode = ConversationMode.riff,
+    ArtefactType? requestedArtefact,
   });
 }

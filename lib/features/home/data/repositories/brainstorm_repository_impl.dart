@@ -12,9 +12,11 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/ai_response.dart';
+import '../../domain/entities/artefact_type.dart';
 import '../../domain/entities/brainstorm.dart';
 import '../../domain/entities/brainstorm_category.dart';
 import '../../domain/entities/chat_message.dart';
+import '../../domain/entities/conversation_mode.dart';
 import '../../domain/repositories/brainstorm_repository.dart';
 import '../datasources/brainstorm_local_ds_interface.dart';
 import '../datasources/brainstorm_remote_ds_interface.dart';
@@ -34,6 +36,8 @@ class BrainstormRepositoryImpl implements BrainstormRepository {
     List<ChatMessage> messages, {
     bool requestFinalOutput = false,
     required BrainstormCategory category,
+    ConversationMode mode = ConversationMode.riff,
+    ArtefactType? requestedArtefact,
   }) async {
     try {
       final messageModels = messages.map(MessageModel.fromEntity).toList();
@@ -41,6 +45,8 @@ class BrainstormRepositoryImpl implements BrainstormRepository {
         messageModels,
         requestFinal: requestFinalOutput,
         category: category,
+        mode: mode,
+        requestedArtefact: requestedArtefact,
       );
       return Right(response.toEntity());
     } on ValidationException catch (e) {
@@ -88,6 +94,8 @@ class BrainstormRepositoryImpl implements BrainstormRepository {
           ],
           requestFinal: requestFinalOutput,
           category: category,
+          mode: mode,
+          requestedArtefact: requestedArtefact,
         );
         return Right(correctiveResponse.toEntity());
       } catch (e) {
@@ -98,6 +106,7 @@ class BrainstormRepositoryImpl implements BrainstormRepository {
             text: 'We received a response but could not parse it. Tap "Try Again" to retry.',
             isFinal: requestFinalOutput,
             structuredResult: null,
+            artefacts: const [],
           ),
         );
       }
@@ -113,6 +122,8 @@ class BrainstormRepositoryImpl implements BrainstormRepository {
     List<MessageModel> messages, {
     required bool requestFinal,
     required BrainstormCategory category,
+    ConversationMode mode = ConversationMode.riff,
+    ArtefactType? requestedArtefact,
   }) async {
     const maxRetries = 3;
     const baseDelay = Duration(seconds: 1);
@@ -123,6 +134,8 @@ class BrainstormRepositoryImpl implements BrainstormRepository {
           messages,
           requestFinal: requestFinal,
           category: category,
+          mode: mode,
+          requestedArtefact: requestedArtefact,
         );
       } on DioException catch (e) {
         final statusCode = e.response?.statusCode;
